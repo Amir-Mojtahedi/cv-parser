@@ -5,8 +5,8 @@ export interface AnalysisDetail {
 }
   
 export interface CVAnalysis {
-    "Hard Skills": AnalysisDetail;
     Experience: AnalysisDetail;
+    "Hard Skills": AnalysisDetail;
     Education: AnalysisDetail;
     "Soft Skills": AnalysisDetail;
     "Diversity in experience": AnalysisDetail;
@@ -21,6 +21,5 @@ export interface ATSResponse {
 export interface CVMatch {
     fileName: string;
     matchScore: number;
-    fileUrl: string;
-    analysis?: CVAnalysis;
+    analysis: CVAnalysis;
 }
