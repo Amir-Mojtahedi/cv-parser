@@ -6,12 +6,12 @@ import Link from "next/link";
 import { getAnalysisFromCache } from "@/app/lib/analysisCache"; // <-- IMPORT
 import { notFound } from "next/navigation";
 
-export default async function DashboardPage({
-  params,
-}: {
-  params: { id: string };
+export default async function DashboardPage(props: {
+  params: Promise<{ id: string }>;
 }) {
-  const analysis = await getAnalysisFromCache(params.id);
+  const params = await props.params;
+  const id = params.id;
+  const analysis = await getAnalysisFromCache(id);
 
   if (!analysis) {
     notFound();
