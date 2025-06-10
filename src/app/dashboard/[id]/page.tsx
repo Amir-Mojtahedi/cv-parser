@@ -27,7 +27,7 @@ export default async function DashboardPage({
         <div className="mb-8">
           <Link href="/">
             <Button variant="outline" className="mb-4">
-              <ArrowLeft className="h-4 w-4 mr-2" />       Back to Home
+              <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
             </Button>
           </Link>
 
