@@ -49,13 +49,16 @@ export default function CVMatcher() {
     try {
       const matches = await findTopCVMatches(files, jobDescription, topCount);
 
-      // Cache each result and add the ID to the object
-      const resultsWithIds = matches.map((match) => {
-        const id = cacheAnalysis(match); // <-- CACHE THE DATA
-        return { ...match, cacheId: id };
-      });
+      // The map function must now handle promises
+      const resultsWithIds = await Promise.all(
+        matches.map(async (match) => {
+          // This is now an async operation
+          const id = await cacheAnalysis(match);
+          return { ...match, cacheId: id };
+        })
+      );
 
-      setResults(resultsWithIds); // <-- SET THE RESULTS WITH IDs
+      setResults(resultsWithIds);
     } catch (error) {
       console.error("Error processing CVs:", error);
     } finally {

@@ -1,15 +1,16 @@
+'use server'
+
 import { CVMatch } from "@/app/lib/ai/types";
+import { Redis } from '@upstash/redis';
 
-// This is a simple in-memory cache.
-// In production, use Vercel KV, Redis, or another persistent solution.
-const analysisCache = new Map<string, CVMatch>();
+const redis = Redis.fromEnv();
 
-export function cacheAnalysis(data: CVMatch): string {
-    const id = crypto.randomUUID(); // Generate a unique ID
-    analysisCache.set(id, data);
+export async function cacheAnalysis(data: CVMatch): Promise<string> {
+    const id = crypto.randomUUID();
+    await redis.set(id, data, { ex: 600 }); 
     return id;
 }
 
-export function getAnalysisFromCache(id: string): CVMatch | undefined {
-    return analysisCache.get(id);
+export async function getAnalysisFromCache(id: string): Promise<CVMatch | null> {
+    return await redis.get<CVMatch>(id);
 }

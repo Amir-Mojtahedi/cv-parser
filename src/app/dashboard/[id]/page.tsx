@@ -6,21 +6,17 @@ import Link from "next/link";
 import { getAnalysisFromCache } from "@/app/lib/analysisCache"; // <-- IMPORT
 import { notFound } from "next/navigation";
 
-// This is now an async Server Component!
 export default async function DashboardPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const analysis = getAnalysisFromCache(params.id);
+  const analysis = await getAnalysisFromCache(params.id);
 
-  // If data is not in cache (e.g., server restarted, link expired), show 404
   if (!analysis) {
     notFound();
   }
 
-  // No more useState, useEffect, or loading states!
-  // The page is rendered on the server with the data already present.
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
