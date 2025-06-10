@@ -32,7 +32,7 @@ export default async function DashboardPage({
           </h1>
 
           <p className="text-lg text-gray-600 dark:text-gray-300">
-            Detailed breakdown of the candidate's CV analysis
+            Detailed breakdown of the candidate&apos;s CV analysis
           </p>
         </div>
         <div className="grid gap-6">
