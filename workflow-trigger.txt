@@ -1,0 +1,1 @@
+1 - Trigger workflow for commit : Fix - Including .next folder in the zip file for the workflow
