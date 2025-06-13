@@ -1,7 +1,8 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { usePDFJS } from "@/app/hooks/usePDFJS.hook"; // 👈 Adjust path as needed
+import { useState, useEffect } from "react";
 import { Upload, FileText, Briefcase, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +20,12 @@ import { Separator } from "@/components/ui/separator";
 import { findTopCVMatches } from "@/app/lib/ai/atsService";
 import { useRouter } from "next/navigation";
 import { CVMatch } from "@/app/lib/ai/types";
-import { cacheAnalysis } from "@/app/lib/analysisCache";
+import {
+  cacheAnalysis,
+  cacheFormState,
+  getFormState,
+  clearFormState,
+} from "@/app/lib/analysisCache";
 
 interface ResultWithId extends CVMatch {
   cacheId: string;
@@ -29,9 +35,44 @@ export default function CVMatcher() {
   const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
   const [jobDescription, setJobDescription] = useState("");
+  const [jobDescriptionFile, setJobDescriptionFile] = useState<File | null>(
+    null
+  );
   const [topCount, setTopCount] = useState(5);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<ResultWithId[]>([]); // <-- USE THE NEW TYPE
+  const [pdfjsInstance, setPdfjsInstance] = useState<any>(null);
+
+  usePDFJS(async (pdfjs) => {
+    setPdfjsInstance(pdfjs);
+  }, []);
+
+  // Load saved form state on mount
+  useEffect(() => {
+    const loadSavedState = async () => {
+      const savedState = await getFormState();
+      if (savedState) {
+        setJobDescription(savedState.jobDescription);
+        setTopCount(savedState.topCount);
+        setResults(savedState.results);
+      }
+    };
+    loadSavedState();
+  }, []);
+
+  // Save form state when it changes
+  useEffect(() => {
+    const saveState = async () => {
+      if (jobDescription || results.length > 0) {
+        await cacheFormState({
+          jobDescription,
+          topCount,
+          results,
+        });
+      }
+    };
+    saveState();
+  }, [jobDescription, topCount, results]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || []);
@@ -40,6 +81,43 @@ export default function CVMatcher() {
 
   const removeFile = (index: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleJobDescriptionFile = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setJobDescriptionFile(file);
+
+    const extension = file.name.split(".").pop()?.toLowerCase();
+
+    try {
+      if (extension === "pdf") {
+        const typedArray = new Uint8Array(await file.arrayBuffer());
+
+        const loadingTask = pdfjsInstance.getDocument(typedArray);
+        const pdf = await loadingTask.promise;
+
+        let fullText = "";
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const content = await page.getTextContent();
+          const text = content.items.map((item: any) => item.str).join(" ");
+          fullText += text + "\n";
+        }
+
+        setJobDescription(fullText);
+      } else {
+        // Fall back to text() for txt/docx/doc
+        const text = await file.text();
+        setJobDescription(text);
+      }
+    } catch (error) {
+      console.error("Error reading file:", error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,11 +144,13 @@ export default function CVMatcher() {
     }
   };
 
-  const resetForm = () => {
+  const resetForm = async () => {
     setFiles([]);
     setJobDescription("");
+    setJobDescriptionFile(null);
     setTopCount(5);
     setResults([]);
+    await clearFormState();
   };
 
   const getFileIcon = (fileName: string) => {
@@ -180,14 +260,39 @@ export default function CVMatcher() {
                   >
                     Job Description
                   </Label>
-                  <Textarea
-                    id="job-description"
-                    placeholder="Paste the job description here..."
-                    value={jobDescription}
-                    onChange={(e) => setJobDescription(e.target.value)}
-                    className="min-h-[150px]"
-                    required
-                  />
+                  <div className="space-y-2">
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                      <input
+                        id="job-description-file"
+                        type="file"
+                        accept=".txt,.doc,.docx,.pdf"
+                        onChange={handleJobDescriptionFile}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="job-description-file"
+                        className="cursor-pointer"
+                      >
+                        <FileText className="h-6 w-6 mx-auto mb-2 text-gray-400" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {jobDescriptionFile
+                            ? jobDescriptionFile.name
+                            : "Upload job description file"}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          TXT, DOC, DOCX, PDF files supported
+                        </p>
+                      </label>
+                    </div>
+                    <Textarea
+                      id="job-description"
+                      placeholder="Or paste the job description here..."
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      className="min-h-[150px] max-h-[300px] overflow-y-auto resize-none"
+                      required
+                    />
+                  </div>
                 </div>
 
                 {/* Top N Results */}
