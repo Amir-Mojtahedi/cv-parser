@@ -26,6 +26,8 @@ import {
   getFormState,
   clearFormState,
 } from "@/app/lib/analysisCache";
+import type * as PDFJS from "pdfjs-dist/types/src/pdf";
+import { TextItem } from "pdfjs-dist/types/src/display/api";
 
 interface ResultWithId extends CVMatch {
   cacheId: string;
@@ -41,7 +43,7 @@ export default function CVMatcher() {
   const [topCount, setTopCount] = useState(5);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<ResultWithId[]>([]); // <-- USE THE NEW TYPE
-  const [pdfjsInstance, setPdfjsInstance] = useState<any>(null);
+  const [pdfjsInstance, setPdfjsInstance] = useState<typeof PDFJS>();
 
   usePDFJS(async (pdfjs) => {
     setPdfjsInstance(pdfjs);
@@ -97,6 +99,10 @@ export default function CVMatcher() {
       if (extension === "pdf") {
         const typedArray = new Uint8Array(await file.arrayBuffer());
 
+        if (!pdfjsInstance) {
+          throw new Error('PDF.js instance not initialized');
+        }
+
         const loadingTask = pdfjsInstance.getDocument(typedArray);
         const pdf = await loadingTask.promise;
 
@@ -105,7 +111,10 @@ export default function CVMatcher() {
         for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           const page = await pdf.getPage(pageNum);
           const content = await page.getTextContent();
-          const text = content.items.map((item: any) => item.str).join(" ");
+          const text = content.items
+            .filter((item): item is TextItem => 'str' in item)
+            .map(item => item.str)
+            .join(" ");
           fullText += text + "\n";
         }
 

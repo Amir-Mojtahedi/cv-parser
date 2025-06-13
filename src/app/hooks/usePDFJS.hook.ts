@@ -19,5 +19,5 @@ export const usePDFJS = (
   useEffect(() => {
     if (!pdfjs) return;
     (async () => await onLoad(pdfjs))();
-  }, [pdfjs, ...deps]);
+  }, [pdfjs, onLoad, ...deps]);
 };
