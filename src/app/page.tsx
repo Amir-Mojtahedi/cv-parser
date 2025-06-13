@@ -188,6 +188,47 @@ export default function CVMatcher() {
     router.push(`/dashboard/${result.cacheId}`);
   };
 
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, isJobDescription: boolean = false) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20', 'border-red-500', 'bg-red-50', 'dark:bg-red-900/20');
+
+    const files = Array.from(e.dataTransfer.files);
+    const validTypes = isJobDescription 
+      ? ['.txt', '.doc', '.docx', '.pdf']
+      : ['.pdf', '.doc', '.docx', '.txt', '.png', '.jpg', '.jpeg', '.pptx'];
+    
+    const validFiles = files.filter(file => 
+      validTypes.some(type => file.name.toLowerCase().endsWith(type))
+    );
+
+    if (validFiles.length === 0) {
+      // Show error message
+      alert(`Please drop only ${validTypes.join(', ')} files`);
+      return;
+    }
+
+    if (isJobDescription) {
+      const event = { target: { files: [validFiles[0]] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+      handleJobDescriptionFile(event);
+    } else {
+      const event = { target: { files: validFiles } } as unknown as React.ChangeEvent<HTMLInputElement>;
+      handleFileUpload(event);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
@@ -219,7 +260,12 @@ export default function CVMatcher() {
                   <Label htmlFor="cv-upload" className="text-sm font-medium">
                     Upload CVs
                   </Label>
-                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                  <div 
+                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e)}
+                  >
                     <input
                       id="cv-upload"
                       type="file"
@@ -270,7 +316,12 @@ export default function CVMatcher() {
                     Job Description
                   </Label>
                   <div className="space-y-2">
-                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                    <div 
+                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, true)}
+                    >
                       <input
                         id="job-description-file"
                         type="file"
@@ -286,7 +337,7 @@ export default function CVMatcher() {
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {jobDescriptionFile
                             ? jobDescriptionFile.name
-                            : "Upload job description file"}
+                            : "Upload job description file or drag and drop"}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                           TXT, DOC, DOCX, PDF files supported

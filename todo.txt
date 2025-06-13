@@ -1,0 +1,6 @@
+1. Enable personalized weights for clients based on the job
+2. Enable users to download the CV and later on, preview it directly on the browser
+3. Add Login so each user's reddis data is different
+4. Create a separate page for creating job postings
+5. Refactor code
+6. Improve performance
