@@ -1,10 +1,14 @@
-"use client";
-
-import type React from "react";
-import { usePDFJS } from "@/app/hooks/usePDFJS.hook"; // 👈 Adjust path as needed
-import { useState, useEffect } from "react";
-import { Upload, FileText, Briefcase, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import {
+  ArrowRight,
+  FileText,
+  Target,
+  Zap,
+  Users,
+  CheckCircle,
+  Upload,
+} from "lucide-react";
+import { Button } from "@/components/ui/radix-components/button";
 import {
   Card,
   CardContent,
@@ -12,439 +16,238 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { findTopCVMatches } from "@/app/lib/ai/atsService";
-import { useRouter } from "next/navigation";
-import { CVMatch } from "@/app/lib/ai/types";
-import {
-  cacheAnalysis,
-  cacheFormState,
-  getFormState,
-  clearFormState,
-} from "@/app/lib/analysisCache";
-import type * as PDFJS from "pdfjs-dist/types/src/pdf";
-import { TextItem } from "pdfjs-dist/types/src/display/api";
+import { Badge } from "@/components/ui/radix-components/badge";
 
-interface ResultWithId extends CVMatch {
-  cacheId: string;
-}
-
-export default function CVMatcher() {
-  const router = useRouter();
-  const [files, setFiles] = useState<File[]>([]);
-  const [jobDescription, setJobDescription] = useState("");
-  const [jobDescriptionFile, setJobDescriptionFile] = useState<File | null>(
-    null
-  );
-  const [topCount, setTopCount] = useState(5);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [results, setResults] = useState<ResultWithId[]>([]); // <-- USE THE NEW TYPE
-  const [pdfjsInstance, setPdfjsInstance] = useState<typeof PDFJS>();
-
-  usePDFJS(async (pdfjs) => {
-    setPdfjsInstance(pdfjs);
-  }, []);
-
-  // Load saved form state on mount
-  useEffect(() => {
-    const loadSavedState = async () => {
-      const savedState = await getFormState();
-      if (savedState) {
-        setJobDescription(savedState.jobDescription);
-        setTopCount(savedState.topCount);
-        setResults(savedState.results);
-      }
-    };
-    loadSavedState();
-  }, []);
-
-  // Save form state when it changes
-  useEffect(() => {
-    const saveState = async () => {
-      if (jobDescription || results.length > 0) {
-        await cacheFormState({
-          jobDescription,
-          topCount,
-          results,
-        });
-      }
-    };
-    saveState();
-  }, [jobDescription, topCount, results]);
-
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(event.target.files || []);
-    setFiles((prev) => [...prev, ...selectedFiles]);
-  };
-
-  const removeFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleJobDescriptionFile = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setJobDescriptionFile(file);
-
-    const extension = file.name.split(".").pop()?.toLowerCase();
-
-    try {
-      if (extension === "pdf") {
-        const typedArray = new Uint8Array(await file.arrayBuffer());
-
-        if (!pdfjsInstance) {
-          throw new Error('PDF.js instance not initialized');
-        }
-
-        const loadingTask = pdfjsInstance.getDocument(typedArray);
-        const pdf = await loadingTask.promise;
-
-        let fullText = "";
-
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          const page = await pdf.getPage(pageNum);
-          const content = await page.getTextContent();
-          const text = content.items
-            .filter((item): item is TextItem => 'str' in item)
-            .map(item => item.str)
-            .join(" ");
-          fullText += text + "\n";
-        }
-
-        setJobDescription(fullText);
-      } else {
-        // Fall back to text() for txt/docx/doc
-        const text = await file.text();
-        setJobDescription(text);
-      }
-    } catch (error) {
-      console.error("Error reading file:", error);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessing(true);
-
-    try {
-      const matches = await findTopCVMatches(files, jobDescription, topCount);
-
-      // The map function must now handle promises
-      const resultsWithIds = await Promise.all(
-        matches.map(async (match) => {
-          // This is now an async operation
-          const id = await cacheAnalysis(match);
-          return { ...match, cacheId: id };
-        })
-      );
-
-      setResults(resultsWithIds);
-    } catch (error) {
-      console.error("Error processing CVs:", error);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const resetForm = async () => {
-    setFiles([]);
-    setJobDescription("");
-    setJobDescriptionFile(null);
-    setTopCount(5);
-    setResults([]);
-    await clearFormState();
-  };
-
-  const getFileIcon = (fileName: string) => {
-    const extension = fileName.split(".").pop()?.toLowerCase();
-    switch (extension) {
-      case "pdf":
-        return "📄";
-      case "doc":
-      case "docx":
-        return "📝";
-      case "txt":
-        return "📋";
-      case "png":
-      case "jpg":
-      case "jpeg":
-        return "🖼️";
-      case "pptx":
-        return "📊";
-      default:
-        return "📎";
-    }
-  };
-
-  const handleCVClick = (result: ResultWithId) => {
-    // Navigate using the simple, clean cache ID. No more large data in URL!
-    router.push(`/dashboard/${result.cacheId}`);
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>, isJobDescription: boolean = false) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20', 'border-red-500', 'bg-red-50', 'dark:bg-red-900/20');
-
-    const files = Array.from(e.dataTransfer.files);
-    const validTypes = isJobDescription 
-      ? ['.txt', '.doc', '.docx', '.pdf']
-      : ['.pdf', '.doc', '.docx', '.txt', '.png', '.jpg', '.jpeg', '.pptx'];
-    
-    const validFiles = files.filter(file => 
-      validTypes.some(type => file.name.toLowerCase().endsWith(type))
-    );
-
-    if (validFiles.length === 0) {
-      // Show error message
-      alert(`Please drop only ${validTypes.join(', ')} files`);
-      return;
-    }
-
-    if (isJobDescription) {
-      const event = { target: { files: [validFiles[0]] } } as unknown as React.ChangeEvent<HTMLInputElement>;
-      handleJobDescriptionFile(event);
-    } else {
-      const event = { target: { files: validFiles } } as unknown as React.ChangeEvent<HTMLInputElement>;
-      handleFileUpload(event);
-    }
-  };
-
+export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            CV Matcher
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center max-w-4xl mx-auto">
+          <Badge variant="secondary" className="mb-4">
+            AI-Powered CV Matching
+          </Badge>
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+            Find the Perfect
+            <span className="text-blue-600 dark:text-blue-400">
+              {" "}
+              Candidates{" "}
+            </span>
+            Instantly
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">
-            Upload CVs and find the best matches for your job description
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
+            Upload multiple CVs and job descriptions to automatically identify
+            the best matching candidates. Save hours of manual screening with
+            our intelligent CV parsing and matching system.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/dashboard">
+              <Button size="lg" className="text-lg px-8 py-6">
+                Get Started
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+              Learn More
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            How It Works
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            Our intelligent system makes candidate screening effortless in just
+            three simple steps
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Input Section */}
-          <Card className="h-fit">
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <Card className="text-center border-2 hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Upload & Configure
-              </CardTitle>
-              <CardDescription>
-                Upload CVs, provide job description, and set your preferences
-              </CardDescription>
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Upload className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <CardTitle className="text-xl">1. Upload CVs</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* File Upload */}
-                <div className="space-y-2">
-                  <Label htmlFor="cv-upload" className="text-sm font-medium">
-                    Upload CVs
-                  </Label>
-                  <div 
-                    className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e)}
-                  >
-                    <input
-                      id="cv-upload"
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.pptx"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <label htmlFor="cv-upload" className="cursor-pointer">
-                      <FileText className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Click to upload CVs or drag and drop
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        PDF, DOC, DOCX, TXT, PNG, JPG, PPTX files supported
-                      </p>
-                    </label>
-                  </div>
-
-                  {files.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      {files.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded"
-                        >
-                          <span className="text-sm truncate">{file.name}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFile(index)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Job Description */}
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="job-description"
-                    className="text-sm font-medium"
-                  >
-                    Job Description
-                  </Label>
-                  <div className="space-y-2">
-                    <div 
-                      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, true)}
-                    >
-                      <input
-                        id="job-description-file"
-                        type="file"
-                        accept=".txt,.doc,.docx,.pdf"
-                        onChange={handleJobDescriptionFile}
-                        className="hidden"
-                      />
-                      <label
-                        htmlFor="job-description-file"
-                        className="cursor-pointer"
-                      >
-                        <FileText className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {jobDescriptionFile
-                            ? jobDescriptionFile.name
-                            : "Upload job description file or drag and drop"}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                          TXT, DOC, DOCX, PDF files supported
-                        </p>
-                      </label>
-                    </div>
-                    <Textarea
-                      id="job-description"
-                      placeholder="Or paste the job description here..."
-                      value={jobDescription}
-                      onChange={(e) => setJobDescription(e.target.value)}
-                      className="min-h-[150px] max-h-[300px] overflow-y-auto resize-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Top N Results */}
-                <div className="space-y-2">
-                  <Label htmlFor="top-count" className="text-sm font-medium">
-                    Number of top CVs to return
-                  </Label>
-                  <Input
-                    id="top-count"
-                    type="number"
-                    min="1"
-                    max={files.length || 100}
-                    value={topCount}
-                    onChange={(e) =>
-                      setTopCount(Number.parseInt(e.target.value) || 1)
-                    }
-                    className="w-full"
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex gap-3">
-                  <Button
-                    type="submit"
-                    disabled={
-                      files.length === 0 ||
-                      !jobDescription.trim() ||
-                      isProcessing
-                    }
-                    className="flex-1"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Briefcase className="h-4 w-4 mr-2" />
-                        Find Matches
-                      </>
-                    )}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={resetForm}>
-                    Reset
-                  </Button>
-                </div>
-              </form>
+            <CardContent>
+              <CardDescription className="text-base">
+                Upload multiple CV files in various formats (PDF, DOC, DOCX,
+                TXT) or drag and drop them directly into the system.
+              </CardDescription>
             </CardContent>
           </Card>
 
-          {/* Results Section */}
-          <Card>
+          <Card className="text-center border-2 hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Matching Results
-              </CardTitle>
-              <CardDescription>
-                {results.length > 0
-                  ? `Found ${results.length} matching candidates`
-                  : "Upload CVs and provide a job description to see matches"}
-              </CardDescription>
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="h-8 w-8 text-green-600 dark:text-green-400" />
+              </div>
+              <CardTitle className="text-xl">2. Add Job Description</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              {results.map((result, index) => (
-                <div key={index} className="space-y-4">
-                  {index > 0 && <Separator />}
-                  <div className="flex items-center justify-between">
-                    <div
-                      className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => handleCVClick(result)}
-                    >
-                      <span className="text-2xl">
-                        {getFileIcon(result.fileName)}
-                      </span>
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          {result.fileName}
-                        </h3>
-                        <Badge variant="secondary" className="text-sm mt-1">
-                          {result.matchScore}% Match
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <CardContent>
+              <CardDescription className="text-base">
+                Provide the job description by typing it directly or uploading a
+                file. Our system will analyze the requirements.
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center border-2 hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
+            <CardHeader>
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Target className="h-8 w-8 text-purple-600 dark:text-purple-400" />
+              </div>
+              <CardTitle className="text-xl">3. Get Matches</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="text-base">
+                Receive ranked results showing the best matching candidates with
+                detailed match scores and key insights.
+              </CardDescription>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      {/* Features Section */}
+      <div className="bg-gray-50 dark:bg-gray-800/50 py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+              Why Choose Our CV Matcher?
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Powerful features designed to streamline your recruitment process
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Zap className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Lightning Fast Processing
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Process hundreds of CVs in seconds, not hours. Get instant
+                  results with our optimized matching algorithm.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Target className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Accurate Matching
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Advanced AI algorithms analyze skills, experience, and
+                  qualifications for precise candidate matching.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Multiple Formats
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Support for PDF, DOC, DOCX, TXT, and image formats. No need to
+                  convert files before uploading.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Users className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Bulk Processing
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Upload and process multiple CVs simultaneously. Perfect for
+                  high-volume recruitment campaigns.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                <CheckCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Detailed Scoring
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Get comprehensive match scores and insights to make informed
+                  hiring decisions quickly.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                <ArrowRight className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Easy to Use
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Intuitive interface that requires no training. Start matching
+                  candidates in minutes, not days.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center max-w-3xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
+            Ready to Transform Your Hiring Process?
+          </h2>
+          <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+            Join thousands of recruiters who have streamlined their candidate
+            screening with our AI-powered CV matcher.
+          </p>
+          <Link href="/dashboard">
+            <Button size="lg" className="text-lg px-12 py-6">
+              Start Matching CVs Now
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 dark:bg-gray-950 text-white py-8">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-gray-400">
+            © 2025 CV Matcher. Streamlining recruitment with intelligent
+            candidate matching.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from "@/components/ui/radix-components/progress";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/radix-components/button";
 import Link from "next/link";
-import { getAnalysisFromCache } from "@/app/lib/analysisCache"; // <-- IMPORT
+import { getAnalysisFromCache } from "@/app/lib/reddis/analysisCache";
 import { notFound } from "next/navigation";
 
 export default async function DashboardPage(props: {
@@ -21,7 +21,7 @@ export default async function DashboardPage(props: {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <Link href="/">
+          <Link href="/dashboard">
             <Button variant="outline" className="mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" /> Back to Home
             </Button>
