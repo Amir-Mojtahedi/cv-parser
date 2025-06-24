@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "startAzure": "./node_modules/next/dist/bin/next start"
+    "startAzure": "./node_modules/next/dist/bin/next start",
+    "fix-lint": "npm run lint -- --fix"
   },
   "dependencies": {
     "@google/genai": "^1.4.0",

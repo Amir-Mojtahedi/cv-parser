@@ -19,7 +19,7 @@ async function analyzeCV(
     const prompt = createAtsPrompt(jobDescription);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.0-flash-lite",
       contents: [
         { text: prompt },
         {
@@ -49,7 +49,7 @@ async function analyzeCV(
     return null;
   } catch (error) {
     console.error(`Error processing file ${file.name}:`, error);
-    return null; // Return null on any processing error
+    return null;
   }
 }
 
@@ -58,20 +58,24 @@ export async function findTopCVMatches(
   jobDescription: string,
   topN: number = 5
 ): Promise<CVMatch[]> {
-  const matches: CVMatch[] = [];
   const ANALYSIS_ERROR = "Analysis Failed.";
 
-  for (const file of files) {
-    const analysisResult = await analyzeCV(file, jobDescription);
+  const analysisPromises = files.map(async (file): Promise<CVMatch> => {
+    try {
+      const analysisResult = await analyzeCV(file, jobDescription);
 
-    if (analysisResult) {
-      matches.push({
-        fileName: file.name,
-        matchScore: analysisResult.grade,
-        analysis: analysisResult.analysis,
-      });
-    } else {
-      matches.push({
+      if (analysisResult) {
+        return {
+          fileName: file.name,
+          matchScore: analysisResult.grade,
+          analysis: analysisResult.analysis,
+        };
+      } else {
+        throw new Error("Analysis did not return a valid result.");
+      }
+    } catch (error) {
+      console.error(`Failed to analyze CV: ${file.name}`, error);
+      return {
         fileName: file.name,
         matchScore: 0,
         analysis: {
@@ -85,9 +89,11 @@ export async function findTopCVMatches(
           },
           Approximation: { score: 0, reasoning: ANALYSIS_ERROR },
         },
-      });
+      };
     }
-  }
+  });
 
-  return matches.sort((a, b) => b.matchScore - a.matchScore).slice(0, topN);
+  const allMatches = await Promise.all(analysisPromises);
+
+  return allMatches.sort((a, b) => b.matchScore - a.matchScore).slice(0, topN);
 }

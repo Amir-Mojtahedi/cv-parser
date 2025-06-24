@@ -22,12 +22,14 @@ import {
   getFileIcon,
 } from "@/app/lib/helpers/dashboard/utils";
 import useCVMatcherHandler from "@/app/hooks/useCVMatcherHandler.hook";
+import Skeleton from "@/components/ui/Skeleton";
 
 export default function CVMatcher() {
   const {
     files,
     results,
     topCount,
+    jobDescMode,
     isProcessing,
     jobDescription,
     jobDescriptionFile,
@@ -37,23 +39,11 @@ export default function CVMatcher() {
     removeFile,
     handleJobDescriptionFile,
     handleFileUpload,
+    handleModeChange,
     handleCVClick,
     handleDrop,
     handleSubmit,
   } = useCVMatcherHandler();
-
-  // Add state for input mode
-  const [jobDescMode, setJobDescMode] = useState<"write" | "upload">("write");
-
-  // When switching modes, clear the other input
-  function handleModeChange(mode: "write" | "upload") {
-    setJobDescMode(mode);
-    if (mode === "write") {
-      handleJobDescriptionFile(); // clear file
-    } else {
-      setJobDescription(""); // clear textarea
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -243,44 +233,72 @@ export default function CVMatcher() {
           </Card>
 
           {/* Results Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Matching Results
-              </CardTitle>
-              <CardDescription>
-                {results.length > 0
-                  ? `Found ${results.length} matching candidates`
-                  : "Upload CVs and provide a job description to see matches"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {results.map((result, index) => (
-                <div key={index} className="space-y-4">
-                  {index > 0 && <Separator />}
-                  <div className="flex items-center justify-between">
-                    <div
-                      className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => handleCVClick(result)}
-                    >
-                      <span className="text-2xl">
-                        {getFileIcon(result.fileName)}
-                      </span>
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          {result.fileName}
-                        </h3>
-                        <Badge variant="secondary" className="text-sm mt-1">
-                          {result.matchScore}% Match
-                        </Badge>
+          {isProcessing ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Matching Results
+                </CardTitle>
+                <CardDescription>
+                  Processing CVs and finding best matches...
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {files.map((_, idx) => (
+                  <div key={idx} className="space-y-4">
+                    {idx > 0 && <Separator />}
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex-1">
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-4 w-20" />
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+                ))}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Matching Results
+                </CardTitle>
+                <CardDescription>
+                  {results.length > 0
+                    ? `Found ${results.length} matching candidates`
+                    : "Upload CVs and provide a job description to see matches"}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {results.map((result, index) => (
+                  <div key={index} className="space-y-4">
+                    {index > 0 && <Separator />}
+                    <div className="flex items-center justify-between">
+                      <div
+                        className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => handleCVClick(result)}
+                      >
+                        <span className="text-2xl">
+                          {getFileIcon(result.fileName)}
+                        </span>
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {result.fileName}
+                          </h3>
+                          <Badge variant="secondary" className="text-sm mt-1">
+                            {result.matchScore}% Match
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -42,6 +42,7 @@ const useCVMatcherHandler = () => {
   const [topCount, setTopCount] = useState(5);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<ResultWithId[]>([]);
+  const [jobDescMode, setJobDescMode] = useState<"write" | "upload">("write");
 
   // Load saved form state on mount
   useEffect(() => {
@@ -69,6 +70,18 @@ const useCVMatcherHandler = () => {
     };
     saveState();
   }, [jobDescription, topCount, results]);
+
+  const handleModeChange = useCallback(
+    (mode: "write" | "upload") => {
+      setJobDescMode(mode);
+      if (mode === "write") {
+        handleJobDescriptionFile(); 
+      } else {
+        setJobDescription(""); 
+      }
+    },
+    [setJobDescMode, handleJobDescriptionFile, setJobDescription]
+  );
 
   const resetForm = useCallback(async () => {
     removeAllFiles();
@@ -160,6 +173,7 @@ const useCVMatcherHandler = () => {
     files,
     results,
     topCount,
+    jobDescMode,
     isProcessing,
     jobDescription,
     jobDescriptionFile,
@@ -169,6 +183,7 @@ const useCVMatcherHandler = () => {
     removeFile,
     handleJobDescriptionFile,
     handleFileUpload,
+    handleModeChange,
     handleCVClick,
     handleDrop,
     handleSubmit,
