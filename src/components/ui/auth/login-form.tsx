@@ -18,8 +18,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
+  const router = useRouter();
   const [errorMessage, dispatch] = useActionState(
     (prevState: string | undefined, formData: FormData) => login(formData),
     undefined
@@ -45,8 +47,7 @@ export default function LoginForm() {
 };
 
   const handleCreateAccount = () => {
-    // Handle navigation to create account page
-    console.log("Navigate to create account");
+    router.push("/signup");
   };
 
   return (

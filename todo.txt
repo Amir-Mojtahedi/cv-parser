@@ -1,7 +1,17 @@
-1. Enable personalized weights for clients based on the job
-2. Enable users to download the CV and later on, preview it directly on the browser
-3. Double check to see what things must be stored in redis beside the matched cvs.
-4. Hash passwords using a library that works in an edge environment.
-5. Create a separate page for creating job postings
-6. Refactor code
-7. Improve performance
+## TODO: Authentication & User Management
+
+### High Priority (Critical Issues)
+1. **Fix account creation flow** - Don't show "failed to create account" when it actually succeeded and redirect users to dashboard after successful account creation
+2. **Enable Google OAuth** - Implement Google authentication as an alternative login method
+3. **Add logout functionality** - Implement a sign-out button for users to log out of their accounts
+4. **Password security** - Hash passwords using a library that works in an edge environment (e.g., bcryptjs or similar)
+
+### Medium Priority (Core Features)
+5. **CV management** - Enable users to download CVs and implement browser preview functionality
+6. **CV parser support** - Ensure CV parser accepts multiple formats: PDF, DOCX, JPEG, JPG, and PNG
+7. **Personalized matching** - Enable personalized weights for clients based on specific job requirements
+8. **Data storage optimization** - Review and optimize what data needs to be stored in Redis beyond matched CVs
+
+### Low Priority (Code Quality)
+9. **Code refactoring** - Improve code structure, remove duplication, and enhance maintainability
+10. **Performance optimization** - Optimize application performance, reduce load times, and improve user experience
