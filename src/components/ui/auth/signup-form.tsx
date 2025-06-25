@@ -20,7 +20,6 @@ import {
   Mail,
   Building,
   Calendar,
-  MapPin,
   Check,
   X,
 } from "lucide-react";
