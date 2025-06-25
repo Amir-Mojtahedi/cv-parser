@@ -1,11 +1,6 @@
 "use client";
 
 import type React from "react";
-
-import { useState } from "react";
-import { signIn } from 'next-auth/react'; // Use the client-side hook for onClick events
-import { useFormState } from "react-dom";
-import { signup } from "@/app/lib/auth/authenticate"; // Import the new action
 import { Button } from "@/components/ui/radix-components/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/radix-components/label";
@@ -17,182 +12,44 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/radix-components/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/radix-components/select";
 import {
   Eye,
   EyeOff,
   Lock,
   User,
   Mail,
-  Phone,
   Building,
   Calendar,
   MapPin,
   Check,
   X,
 } from "lucide-react";
-
-interface SignupFormData {
-  firstName: string;
-  lastName: string;
-  username: string;
-  email: string;
-  phone: string;
-  password: string;
-  confirmPassword: string;
-  company: string;
-  dateOfBirth: string;
-  country: string;
-  agreeToTerms: boolean;
-  agreeToMarketing: boolean;
-}
+import useSignup from "@/components/ui/hooks/useSignup";
 
 export default function SignupForm() {
-  const [errorMessage, dispatch] = useFormState(
-    (prevState: string | undefined, formData: globalThis.FormData) => signup(formData),
-    undefined
-  );
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [formData, setFormData] = useState<SignupFormData>({
-    firstName: "",
-    lastName: "",
-    username: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirmPassword: "",
-    company: "",
-    dateOfBirth: "",
-    country: "",
-    agreeToTerms: false,
-    agreeToMarketing: false,
-  });
-  const [errors, setErrors] = useState<Partial<SignupFormData>>({});
-
-  const countries = [
-    "United States",
-    "Canada",
-    "United Kingdom",
-    "Germany",
-    "France",
-    "Australia",
-    "Japan",
-    "Brazil",
-    "India",
-    "Mexico",
-    "Other",
-  ];
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error when user starts typing
-    if (errors[name as keyof SignupFormData]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleCheckboxChange = (name: string, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      [name]: checked,
-    }));
-  };
-
-//   const validateForm = (): boolean => {
-//     const newErrors: Partial<SignupFormData> = {};
-
-//     if (!formData.firstName.trim())
-//       newErrors.firstName = "First name is required";
-//     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-//     if (!formData.username.trim()) newErrors.username = "Username is required";
-//     if (formData.username.length < 3)
-//       newErrors.username = "Username must be at least 3 characters";
-
-//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-//     if (!formData.email.trim()) newErrors.email = "Email is required";
-//     else if (!emailRegex.test(formData.email))
-//       newErrors.email = "Please enter a valid email";
-
-//     const phoneRegex = /^\+?[\d\s\-$$$$]{10,}$/;
-//     if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
-//     else if (!phoneRegex.test(formData.phone))
-//       newErrors.phone = "Please enter a valid phone number";
-
-//     if (!formData.password) newErrors.password = "Password is required";
-//     else if (formData.password.length < 8)
-//       newErrors.password = "Password must be at least 8 characters";
-
-//     if (!formData.confirmPassword)
-//       newErrors.confirmPassword = "Please confirm your password";
-//     else if (formData.password !== formData.confirmPassword)
-//       newErrors.confirmPassword = "Passwords do not match";
-
-//     if (!formData.country) newErrors.country = "Please select your country";
-
-//     setErrors(newErrors);
-//     return Object.keys(newErrors).length === 0;
-//   };
-
-  const getPasswordStrength = (password: string) => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/\d/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    return strength;
-  };
-
-  const passwordStrength = getPasswordStrength(formData.password);
-  const strengthLabels = ["Very Weak", "Weak", "Fair", "Good", "Strong"];
-  const strengthColors = [
-    "bg-red-500",
-    "bg-orange-500",
-    "bg-yellow-500",
-    "bg-blue-500",
-    "bg-green-500",
-  ];
-
-//   const handleSignup = (e: React.FormEvent) => {
-//     e.preventDefault();
-//     if (validateForm()) {
-//       // Handle signup logic here
-//       console.log("Signup attempt:", formData);
-//     }
-//   };
-
-  const handleGoogleSignup = () => {
-    // The first argument is the provider ID ('google') from your auth.ts config
-    // The second argument is options, like a redirect path after login.
-    signIn("google", { callbackUrl: "/dashboard" }); 
-  };
-
-  const handleBackToLogin = () => {
-    // Handle navigation back to login
-    console.log("Navigate back to login");
-  };
+  const {
+    // Form state
+    formData,
+    errors,
+    errorMessage,
+    
+    // UI state
+    showPassword,
+    setShowPassword,
+    showConfirmPassword,
+    setShowConfirmPassword,
+    
+    // Password strength
+    passwordStrength,
+    strengthLabels,
+    strengthColors,
+    
+    // Event handlers
+    handleInputChange,
+    handleSubmit,
+    handleGoogleSignup,
+    handleBackToLogin,
+  } = useSignup();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
@@ -244,7 +101,7 @@ export default function SignupForm() {
             </div>
           </div>
 
-          <form action={dispatch} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -287,27 +144,6 @@ export default function SignupForm() {
               </div>
             </div>
 
-            {/* Username */}
-            <div className="space-y-2">
-              <Label htmlFor="username">Username *</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="username"
-                  name="username"
-                  type="text"
-                  placeholder="johndoe123"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  className="pl-10"
-                  required
-                />
-              </div>
-              {errors.username && (
-                <p className="text-sm text-red-500">{errors.username}</p>
-              )}
-            </div>
-
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email Address *</Label>
@@ -326,27 +162,6 @@ export default function SignupForm() {
               </div>
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number *</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="+1 (555) 123-4567"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="pl-10"
-                  required
-                />
-              </div>
-              {errors.phone && (
-                <p className="text-sm text-red-500">{errors.phone}</p>
               )}
             </div>
 
@@ -498,84 +313,6 @@ export default function SignupForm() {
                 </div>
               </div>
             </div>
-
-            {/* Country */}
-            <div className="space-y-2">
-              <Label htmlFor="country">Country *</Label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
-                <Select
-                  onValueChange={(value) =>
-                    handleSelectChange("country", value)
-                  }
-                >
-                  <SelectTrigger className="pl-10">
-                    <SelectValue placeholder="Select your country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {errors.country && (
-                <p className="text-sm text-red-500">{errors.country}</p>
-              )}
-            </div>
-
-            {/* Terms and Conditions */}
-            <div className="space-y-4">
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="agreeToTerms"
-                  checked={formData.agreeToTerms}
-                  onCheckedChange={(checked) =>
-                    handleCheckboxChange("agreeToTerms", checked as boolean)
-                  }
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <Label
-                    htmlFor="agreeToTerms"
-                    className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    I agree to the{" "}
-                    <a href="#" className="text-primary hover:underline">
-                      Terms of Service
-                    </a>{" "}
-                    and{" "}
-                    <a href="#" className="text-primary hover:underline">
-                      Privacy Policy
-                    </a>{" "}
-                    *
-                  </Label>
-                </div>
-              </div>
-              {errors.agreeToTerms && (
-                <p className="text-sm text-red-500">{errors.agreeToTerms}</p>
-              )}
-
-              <div className="flex items-start space-x-2">
-                <Checkbox
-                  id="agreeToMarketing"
-                  checked={formData.agreeToMarketing}
-                  onCheckedChange={(checked) =>
-                    handleCheckboxChange("agreeToMarketing", checked as boolean)
-                  }
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <Label
-                    htmlFor="agreeToMarketing"
-                    className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    I would like to receive marketing emails and product updates
-                  </Label>
-                </div>
-              </div>
-            </div>
-
             {errorMessage && (
               <div className="text-sm text-red-500">{errorMessage}</div>
             )}

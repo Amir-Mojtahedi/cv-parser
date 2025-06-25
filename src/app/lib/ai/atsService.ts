@@ -1,13 +1,12 @@
 "use server";
 
 import { GoogleGenAI } from "@google/genai";
-import { atsAnalysisSchema } from "./atsSchema"; // Import the schema
-import { createAtsPrompt } from "./atsPrompt"; // Import the prompt function
-import { CVMatch, ATSResponse } from "./types"; // Import types
+import { atsAnalysisSchema } from "./atsSchema";
+import { createAtsPrompt } from "./atsPrompt";
+import { CVMatch, ATSResponse } from "./types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-// Helper function to process a single file
 async function analyzeCV(
   file: File,
   jobDescription: string

@@ -21,7 +21,7 @@ import {
   getFileIcon,
 } from "@/app/lib/helpers/dashboard/utils";
 import useCVMatcherHandler from "@/app/hooks/useCVMatcherHandler.hook";
-import Skeleton from "@/components/ui/Skeleton";
+import Skeleton from "@/components/ui/skeleton";
 
 export default function CVMatcher() {
   const {

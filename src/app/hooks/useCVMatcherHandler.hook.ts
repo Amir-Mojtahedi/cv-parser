@@ -7,9 +7,9 @@ import useJobDescriptionHandler from "@/app/hooks/useJobDescriptionHandler.hook"
 import {
   cacheAnalysis,
   cacheFormState,
-  getFormState,
-  clearFormState,
-} from "@/app/lib/reddis/analysisCache";
+  getFormStateFromCache,
+  clearFormStateCache,
+} from "@/app/lib/redis/analysisCache";
 import { findTopCVMatches } from "@/app/lib/ai/atsService";
 import { useRouter } from "next/navigation";
 import type * as PDFJS from "pdfjs-dist/types/src/pdf";
@@ -47,7 +47,7 @@ const useCVMatcherHandler = () => {
   // Load saved form state on mount
   useEffect(() => {
     const loadSavedState = async () => {
-      const savedState = await getFormState();
+      const savedState = await getFormStateFromCache();
       if (savedState) {
         setJobDescription(savedState.jobDescription);
         setTopCount(savedState.topCount);
@@ -89,7 +89,7 @@ const useCVMatcherHandler = () => {
     setJobDescriptionFile(null);
     setTopCount(5);
     setResults([]);
-    await clearFormState();
+    await clearFormStateCache();
   }, [removeAllFiles, setJobDescription, setJobDescriptionFile]);
 
   const handleCVClick = useCallback(

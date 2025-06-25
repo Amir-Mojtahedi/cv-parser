@@ -2,10 +2,9 @@
 
 import type React from "react";
 
-import { useState } from "react";
-import { signIn } from 'next-auth/react'; // Use the client-side hook for onClick events
-import { useFormState } from "react-dom";
-import { login } from "@/app/lib/auth/authenticate"; // Import your server action
+import { useActionState, useState } from "react";
+import { signIn } from 'next-auth/react';
+import { login } from "@/app/lib/auth/authenticate";
 import { Button } from "@/components/ui/radix-components/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/radix-components/label";
@@ -21,13 +20,13 @@ import {
 import { Eye, EyeOff, Lock, User } from "lucide-react";
 
 export default function LoginForm() {
-  const [errorMessage, dispatch] = useFormState(
+  const [errorMessage, dispatch] = useActionState(
     (prevState: string | undefined, formData: FormData) => login(formData),
     undefined
   );
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
   });
 
@@ -64,15 +63,15 @@ export default function LoginForm() {
         <CardContent className="space-y-4">
           <form action={dispatch} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username or Email</Label>
+              <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  id="username"
-                  name="username"
-                  type="text"
-                  placeholder="Enter your username or email"
-                  value={formData.username}
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter email"
+                  value={formData.email}
                   onChange={handleInputChange}
                   className="pl-10"
                   required

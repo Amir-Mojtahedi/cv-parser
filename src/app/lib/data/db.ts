@@ -9,20 +9,14 @@ export async function createUser({
   email,
   password,
   name,
-  username,
-  phone,
   company,
   dateOfBirth,
-  country,
 }: {
   email: string;
   password: string;
   name: string;
-  username: string;
-  phone: string;
   company?: string;
   dateOfBirth?: string;
-  country: string;
 }) {
   const { data, error } = await supabase
     .from('users')
@@ -31,11 +25,8 @@ export async function createUser({
         email,
         password,
         name,
-        username,
-        phone,
         company,
         date_of_birth: dateOfBirth,
-        country,
       },
     ])
     .select()
