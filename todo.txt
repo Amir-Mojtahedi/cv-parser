@@ -1,9 +1,7 @@
 ## TODO: Authentication & User Management
 
 ### High Priority (Critical Issues)
-1. **Fix account creation flow** - Don't show "failed to create account" when it actually succeeded and redirect users to dashboard after successful account creation
 2. **Enable Google OAuth** - Implement Google authentication as an alternative login method
-3. **Add logout functionality** - Implement a sign-out button for users to log out of their accounts
 4. **Password security** - Hash passwords using a library that works in an edge environment (e.g., bcryptjs or similar)
 
 ### Medium Priority (Core Features)

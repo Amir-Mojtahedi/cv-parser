@@ -11,6 +11,10 @@ import {
   clearFormStateCache,
 } from "@/app/lib/redis/analysisCache";
 import { findTopCVMatches } from "@/app/lib/ai/atsService";
+import {
+  deserializeFile,
+  serializeFile,
+} from "@/app/lib/helpers/dashboard/utils";
 import { useRouter } from "next/navigation";
 import type * as PDFJS from "pdfjs-dist/types/src/pdf";
 import { CVMatch } from "@/app/lib/ai/types";
@@ -29,7 +33,8 @@ const useCVMatcherHandler = () => {
     []
   );
 
-  const { files, handleFileUpload, removeFile, removeAllFiles } = useFileHandler();
+  const { files, setFiles, handleFileUpload, removeFile, removeAllFiles } =
+    useFileHandler();
   const {
     jobDescription,
     setJobDescription,
@@ -49,19 +54,27 @@ const useCVMatcherHandler = () => {
     const loadSavedState = async () => {
       const savedState = await getFormStateFromCache();
       if (savedState) {
+        const deserializedFiles = savedState.serializedFiles.map(
+          (serializedFile) => deserializeFile(serializedFile)
+        );
+        setFiles(deserializedFiles);
         setJobDescription(savedState.jobDescription);
         setTopCount(savedState.topCount);
         setResults(savedState.results);
       }
     };
     loadSavedState();
-  }, [setJobDescription]);
+  }, [setFiles, setJobDescription]);
 
   // Save form state when it changes
   useEffect(() => {
     const saveState = async () => {
       if (jobDescription || results.length > 0) {
+        const serializedFiles = await Promise.all(
+          files.map((file) => serializeFile(file))
+        );
         await cacheFormState({
+          serializedFiles,
           jobDescription,
           topCount,
           results,
@@ -69,15 +82,15 @@ const useCVMatcherHandler = () => {
       }
     };
     saveState();
-  }, [jobDescription, topCount, results]);
+  }, [files, jobDescription, topCount, results]);
 
   const handleModeChange = useCallback(
     (mode: "write" | "upload") => {
       setJobDescMode(mode);
       if (mode === "write") {
-        handleJobDescriptionFile(); 
+        handleJobDescriptionFile();
       } else {
-        setJobDescription(""); 
+        setJobDescription("");
       }
     },
     [setJobDescMode, handleJobDescriptionFile, setJobDescription]
@@ -100,10 +113,7 @@ const useCVMatcherHandler = () => {
   );
 
   const handleDrop = useCallback(
-    (
-      e: React.DragEvent<HTMLDivElement>,
-      isJobDescription: boolean = false
-    ) => {
+    (e: React.DragEvent<HTMLDivElement>, isJobDescription: boolean = false) => {
       e.preventDefault();
       e.stopPropagation();
       e.currentTarget.classList.remove(

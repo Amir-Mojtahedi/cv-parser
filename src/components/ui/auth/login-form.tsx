@@ -2,9 +2,8 @@
 
 import type React from "react";
 
-import { useActionState, useState } from "react";
-import { signIn } from 'next-auth/react';
-import { login } from "@/app/lib/auth/authenticate";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/radix-components/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/radix-components/label";
@@ -18,19 +17,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function LoginForm() {
   const router = useRouter();
-  const [errorMessage, dispatch] = useActionState(
-    (prevState: string | undefined, formData: FormData) => login(formData),
-    undefined
-  );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -43,11 +42,28 @@ export default function LoginForm() {
   const handleGoogleLogin = () => {
     // The first argument is the provider ID ('google') from your auth.ts config
     // The second argument is options, like a redirect path after login.
-    signIn("google", { callbackUrl: "/dashboard" }); 
-};
+    signIn("google", { callbackUrl: "/dashboard" });
+  };
 
   const handleCreateAccount = () => {
     router.push("/signup");
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const result = await signIn("credentials", {
+      redirect: false,
+      email: formData.email,
+      password: formData.password,
+      callbackUrl,
+    });
+
+    if (result?.ok) {
+      router.replace(callbackUrl); // ✨ Clean, no ghost query params!
+    } else {
+      setErrorMessage("Invalid credentials.");
+    }
   };
 
   return (
@@ -62,7 +78,7 @@ export default function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form action={dispatch} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
