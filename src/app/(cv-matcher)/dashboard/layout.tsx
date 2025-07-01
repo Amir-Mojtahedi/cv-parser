@@ -6,7 +6,15 @@ import { LogOut, FileSearch } from "lucide-react";
 import { Button } from "@/components/ui/radix-components/button";
 import { signOut } from "next-auth/react";
 
-function SignOutDialog({ open, onConfirm, onCancel }: { open: boolean; onConfirm: () => void; onCancel: () => void }) {
+function SignOutDialog({
+  open,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
@@ -26,7 +34,11 @@ function SignOutDialog({ open, onConfirm, onCancel }: { open: boolean; onConfirm
   );
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleSignOut = () => setDialogOpen(true);
@@ -43,11 +55,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo - Left Side */}
-            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <Link
+              href="/"
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            >
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <FileSearch className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-white">CV Matcher</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
+                CV Matcher
+              </span>
             </Link>
             {/* Sign Out Button - Right Side */}
             <Button
@@ -62,7 +79,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </nav>
-      <SignOutDialog open={dialogOpen} onConfirm={handleConfirm} onCancel={handleCancel} />
+      <SignOutDialog
+        open={dialogOpen}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
       {/* Main Content */}
       <main>{children}</main>
     </>

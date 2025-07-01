@@ -5,6 +5,7 @@
 4. **Password security** - Hash passwords using a library that works in an edge environment (e.g., bcryptjs or similar)
 
 ### Medium Priority (Core Features)
+Make sure that in prod, the redirect after login works
 5. **CV management** - Enable users to download CVs and implement browser preview functionality
 6. **CV parser support** - Ensure CV parser accepts multiple formats: PDF, DOCX, JPEG, JPG, and PNG
 7. **Personalized matching** - Enable personalized weights for clients based on specific job requirements

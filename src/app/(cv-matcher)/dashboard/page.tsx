@@ -25,7 +25,7 @@ import Skeleton from "@/components/ui/skeleton";
 
 export default function CVMatcher() {
   const {
-    files,
+    cvFiles,
     results,
     topCount,
     jobDescMode,
@@ -35,9 +35,9 @@ export default function CVMatcher() {
     setJobDescription,
     setTopCount,
     resetForm,
-    removeFile,
+    removeCVFile,
     handleJobDescriptionFile,
-    handleFileUpload,
+    handleCVFileUpload,
     handleModeChange,
     handleCVClick,
     handleDrop,
@@ -86,7 +86,7 @@ export default function CVMatcher() {
                       type="file"
                       multiple
                       accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.pptx"
-                      onChange={handleFileUpload}
+                      onChange={handleCVFileUpload}
                       className="hidden"
                     />
                     <label htmlFor="cv-upload" className="cursor-pointer">
@@ -100,19 +100,21 @@ export default function CVMatcher() {
                     </label>
                   </div>
 
-                  {files.length > 0 && (
+                  {cvFiles.length > 0 && (
                     <div className="mt-4 space-y-2">
-                      {files.map((file, index) => (
+                      {cvFiles.map((cvFile, index) => (
                         <div
                           key={index}
                           className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded"
                         >
-                          <span className="text-sm truncate">{file.name}</span>
+                          <span className="text-sm truncate">
+                            {cvFile.name}
+                          </span>
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => removeFile(index)}
+                            onClick={() => removeCVFile(index)}
                           >
                             Remove
                           </Button>
@@ -148,6 +150,7 @@ export default function CVMatcher() {
                       id="job-description"
                       placeholder="Paste the job description here..."
                       onChange={(e) => setJobDescription(e.target.value)}
+                      value={jobDescription}
                       className="min-h-[150px] max-h-[300px] overflow-y-auto resize-none"
                     />
                   ) : (
@@ -160,7 +163,7 @@ export default function CVMatcher() {
                       <input
                         id="job-description-file"
                         type="file"
-                        accept=".txt,.doc,.docx,.pdf"
+                        accept=".pdf"
                         onChange={(e) => handleJobDescriptionFile(e)}
                         className="hidden"
                       />
@@ -170,14 +173,22 @@ export default function CVMatcher() {
                       >
                         <FileText className="h-6 w-6 mx-auto mb-2 text-gray-400" />
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {jobDescriptionFile
-                            ? jobDescriptionFile.name
-                            : "Upload job description file or drag and drop"}
+                          Click to upload a job description or drag and drop
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                          TXT, DOC, DOCX, PDF files supported
+                          PDF files supported
                         </p>
                       </label>
+                    </div>
+                  )}
+
+                  {jobDescriptionFile && jobDescMode === "upload" && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                        <span className="text-sm truncate">
+                          {jobDescriptionFile.name}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -191,7 +202,7 @@ export default function CVMatcher() {
                     id="top-count"
                     type="number"
                     min="1"
-                    max={files.length || 100}
+                    max={cvFiles.length || 100}
                     value={topCount}
                     onChange={(e) =>
                       setTopCount(Number.parseInt(e.target.value) || 1)
@@ -205,8 +216,8 @@ export default function CVMatcher() {
                   <Button
                     type="submit"
                     disabled={
-                      files.length === 0 ||
-                      !jobDescription.trim() ||
+                      cvFiles.length === 0 ||
+                      !(jobDescription.trim() || jobDescriptionFile) ||
                       isProcessing
                     }
                     className="flex-1"
@@ -244,7 +255,7 @@ export default function CVMatcher() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {files.map((_, idx) => (
+                {cvFiles.map((_, idx) => (
                   <div key={idx} className="space-y-4">
                     {idx > 0 && <Separator />}
                     <div className="flex items-center gap-3">

@@ -59,10 +59,10 @@ export default function LoginForm() {
       callbackUrl,
     });
 
-    if (result?.ok) {
-      router.replace(callbackUrl); // ✨ Clean, no ghost query params!
-    } else {
+    if (result?.error === "CredentialsSignin") {
       setErrorMessage("Invalid credentials.");
+    } else {
+      router.replace(callbackUrl);
     }
   };
 

@@ -3,25 +3,35 @@
 import { useState, useCallback } from "react";
 
 const useFileHandler = () => {
-  const [files, setFiles] = useState<File[]>([]);
+  const [cvFiles, setCVFiles] = useState<File[]>([]);
 
-  const handleFileUpload = useCallback(
+  const handleCVFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFiles = Array.from(event.target.files || []);
-      setFiles((prev) => [...prev, ...selectedFiles]);
+      setCVFiles((prev) => [...prev, ...selectedFiles]);
     },
     []
   );
 
-  const removeFile = useCallback((index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+  const handleBulkCVFilesUpload = useCallback((cvFiles: File[]) => {
+    setCVFiles(cvFiles);
   }, []);
 
-  const removeAllFiles = useCallback(() => {
-    setFiles([]);
+  const removeCVFile = useCallback((index: number) => {
+    setCVFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
-  return { files, setFiles, handleFileUpload, removeFile, removeAllFiles };
+  const removeAllCVFiles = useCallback(() => {
+    setCVFiles([]);
+  }, []);
+
+  return {
+    cvFiles,
+    handleBulkCVFilesUpload,
+    handleCVFileUpload,
+    removeCVFile,
+    removeAllCVFiles,
+  };
 };
 
 export default useFileHandler;

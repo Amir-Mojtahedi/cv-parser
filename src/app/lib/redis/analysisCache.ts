@@ -13,10 +13,11 @@ const getAnalysisKey = (userId: string, analysisId: string) =>
   `analysis:${userId}:${analysisId}`;
 
 interface FormState {
-  serializedFiles: SerializableFile[];
-  jobDescription: string;
-  topCount: number;
-  results: Array<CVMatch & { cacheId: string }>;
+  serializedCVFiles?: SerializableFile[];
+  serializedJobDescriptionFile?: SerializableFile;
+  jobDescription?: string;
+  topCount?: number;
+  results?: Array<CVMatch & { cacheId: string }>;
 }
 
 export async function cacheAnalysis(data: CVMatch): Promise<string> {

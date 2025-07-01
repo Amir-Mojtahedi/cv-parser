@@ -1,7 +1,8 @@
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { signup } from "@/app/lib/auth/authenticate";
 import { signupSchema } from "@/lib/zod";
+import { useRouter } from "next/navigation";
 
 interface SignupFormData {
   firstName: string;
@@ -9,16 +10,12 @@ interface SignupFormData {
   email: string;
   password: string;
   confirmPassword: string;
-  company: string;
-  dateOfBirth: string;
+  company?: string;
+  dateOfBirth?: string;
 }
 
 export default function useSignup() {
-  const [errorMessage, dispatch] = useActionState(
-    (prevState: string | undefined, formData: FormData) => signup(formData),
-    undefined
-  );
-
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState<SignupFormData>({
@@ -31,6 +28,7 @@ export default function useSignup() {
     dateOfBirth: "",
   });
   const [errors, setErrors] = useState<Partial<SignupFormData>>({});
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -59,14 +57,21 @@ export default function useSignup() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
       const formDataObj = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        formDataObj.append(key, value);
+        if (value) {
+          formDataObj.append(key, value);
+        }
       });
-      dispatch(formDataObj);
+      const error = await signup(formDataObj);
+      if (!error) {
+        router.replace("/dashboard");
+      } else {
+        setErrorMessage(error);
+      }
     }
   };
 
