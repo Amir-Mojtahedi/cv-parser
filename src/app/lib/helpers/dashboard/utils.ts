@@ -74,13 +74,15 @@ function deserializeFile(serialized: SerializableFile): File {
   });
 }
 
-async function loadCVFormState(setters: {
-  setCVs: Function;
-  setJD: Function;
-  setJDFile: Function;
-  setTopCount: Function;
-  setResults: Function;
-}) {
+type LoadCVFormStateSetters = {
+  setCVs: (files: File[]) => void;
+  setJD: (jd: string) => void;
+  setJDFile: (file: File) => void;
+  setTopCount: (count: number) => void;
+  setResults: (results: any[]) => void;
+};
+
+async function loadCVFormState(setters: LoadCVFormStateSetters) {
   const savedState = await getFormStateFromCache();
   const deserializedCVFiles =
     savedState?.serializedCVFiles?.map(deserializeFile);
