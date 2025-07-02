@@ -15,6 +15,7 @@ const getAnalysisKey = (userId: string, analysisId: string) =>
 interface FormState {
   serializedCVFiles?: SerializableFile[];
   serializedJobDescriptionFile?: SerializableFile;
+  extractedJobDescription?: string
   jobDescription?: string;
   topCount?: number;
   results?: Array<CVMatch & { cacheId: string }>;

@@ -18,7 +18,7 @@ async function analyzeCV(
     const prompt = createAtsPrompt(jobDescription);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash-lite",
+      model: "gemini-2.5-flash",
       contents: [
         { text: prompt },
         {

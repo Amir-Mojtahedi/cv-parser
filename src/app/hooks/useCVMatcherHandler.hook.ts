@@ -43,6 +43,7 @@ const useCVMatcherHandler = () => {
     jobDescription,
     setJobDescription,
     extractedJobDescription,
+    setExtractedJobDescription,
     jobDescriptionFile,
     setJobDescriptionFile,
     handleJobDescriptionFile,
@@ -59,8 +60,9 @@ const useCVMatcherHandler = () => {
   useEffect(() => {
     loadCVFormState({
       setCVs: handleBulkCVFilesUpload,
-      setJD: setJobDescription,
       setJDFile: setJobDescriptionFile,
+      setExtractedJD: setExtractedJobDescription,
+      setJD: setJobDescription,
       setTopCount,
       setResults,
     });
@@ -71,6 +73,7 @@ const useCVMatcherHandler = () => {
       saveCVFormState({
         cvFiles,
         jobDescriptionFile,
+        extractedJobDescription,
         jobDescription,
         topCount,
         results,
@@ -78,7 +81,14 @@ const useCVMatcherHandler = () => {
     }, 500);
 
     return () => clearTimeout(debounceTimer);
-  }, [cvFiles, jobDescriptionFile, jobDescription, topCount, results]); // Dependencies array
+  }, [
+    cvFiles,
+    jobDescriptionFile,
+    extractedJobDescription,
+    jobDescription,
+    topCount,
+    results,
+  ]);
 
   const handleModeChange = (mode: "write" | "upload") => {
     setJobDescMode(mode);
