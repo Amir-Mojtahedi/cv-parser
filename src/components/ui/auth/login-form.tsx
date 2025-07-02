@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -27,9 +27,6 @@ export default function LoginForm() {
     email: "",
     password: "",
   });
-
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,13 +53,13 @@ export default function LoginForm() {
       redirect: false,
       email: formData.email,
       password: formData.password,
-      callbackUrl,
+      callbackUrl: "/dashboard",
     });
 
     if (result?.error === "CredentialsSignin") {
       setErrorMessage("Invalid credentials.");
     } else {
-      router.replace(callbackUrl);
+      router.replace("/dashboard");
     }
   };
 

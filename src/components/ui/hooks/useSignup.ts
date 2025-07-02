@@ -100,7 +100,7 @@ export default function useSignup() {
   };
 
   const handleBackToLogin = () => {
-    console.log("Navigate back to login");
+    router.replace("/login")
   };
 
   return {

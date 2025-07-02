@@ -1,5 +1,8 @@
 ## TODO: Authentication & User Management
 
+### Bugs
+1. In production, redirect after login does not work
+
 ### High Priority (Critical Issues)
 2. **Enable Google OAuth** - Implement Google authentication as an alternative login method
 4. **Password security** - Hash passwords using a library that works in an edge environment (e.g., bcryptjs or similar)
@@ -14,3 +17,4 @@ Make sure that in prod, the redirect after login works
 ### Low Priority (Code Quality)
 9. **Code refactoring** - Improve code structure, remove duplication, and enhance maintainability
 10. **Performance optimization** - Optimize application performance, reduce load times, and improve user experience
+

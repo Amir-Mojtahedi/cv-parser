@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { usePDFJS } from "@/app/hooks/usePDFJS.hook";
 import useFileHandler from "@/app/hooks/useFileHandler.hook";
 import useJobDescriptionHandler from "@/app/hooks/useJobDescriptionHandler.hook";
-import useSyncedRef from "@/app/hooks/useSyncedRef.hook";
 import {
   cacheAnalysis,
   clearFormStateCache,
@@ -17,6 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import type * as PDFJS from "pdfjs-dist/types/src/pdf";
 import { CVMatch } from "@/app/lib/ai/types";
+
 interface ResultWithId extends CVMatch {
   cacheId: string;
 }
@@ -56,12 +56,6 @@ const useCVMatcherHandler = () => {
   const [results, setResults] = useState<ResultWithId[]>([]);
   const [jobDescMode, setJobDescMode] = useState<"write" | "upload">("write");
 
-  const cvFilesRef = useSyncedRef(cvFiles);
-  const jobDescriptionRef = useSyncedRef(jobDescription);
-  const topCountRef = useSyncedRef(topCount);
-  const resultsRef = useSyncedRef(results);
-  const jobDescriptionFileRef = useSyncedRef(jobDescriptionFile);
-
   useEffect(() => {
     loadCVFormState({
       setCVs: handleBulkCVFilesUpload,
@@ -70,17 +64,21 @@ const useCVMatcherHandler = () => {
       setTopCount,
       setResults,
     });
-
-    return () => {
-      saveCVFormState({
-        cvFiles: cvFilesRef.current,
-        jobDescriptionFile: jobDescriptionFileRef.current,
-        jobDescription: jobDescriptionRef.current,
-        topCount: topCountRef.current,
-        results: resultsRef.current,
-      });
-    };
   }, []);
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      saveCVFormState({
+        cvFiles,
+        jobDescriptionFile,
+        jobDescription,
+        topCount,
+        results,
+      });
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [cvFiles, jobDescriptionFile, jobDescription, topCount, results]); // Dependencies array
 
   const handleModeChange = (mode: "write" | "upload") => {
     setJobDescMode(mode);
