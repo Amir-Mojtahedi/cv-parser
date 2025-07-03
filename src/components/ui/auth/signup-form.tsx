@@ -23,7 +23,7 @@ import {
   Check,
   X,
 } from "lucide-react";
-import useSignup from "@/components/ui/hooks/useSignup";
+import useSignup from "@/components/ui/hooks/useSignup.hook";
 
 export default function SignupForm() {
   const {

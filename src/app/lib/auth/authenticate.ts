@@ -3,7 +3,32 @@
 import { signIn } from "@/lib/auth/auth";
 import { createUser } from "@/app/lib/data/db";
 import { ZodError } from "zod";
-import { signupSchema } from "@/lib/zod";
+import { signInSchema, signupSchema } from "@/lib/zod";
+
+export async function login(formData: FormData) {
+  const data = Object.fromEntries(formData.entries());
+
+  try {
+    const validatedData = signInSchema.parse(data);
+
+    await signIn("credentials", {
+      redirect: false,
+      email: validatedData.email,
+      password: validatedData.password,
+      callbackUrl: "/dashboard",
+    });
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as any).code === "credentials"
+    ) {
+      return "Invalid Credentials!";
+    }
+    return "Invalid Credentials!";
+  }
+}
 
 export async function signup(formData: FormData) {
   const data = Object.fromEntries(formData.entries());

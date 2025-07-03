@@ -2,8 +2,6 @@
 
 import type React from "react";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/radix-components/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/radix-components/label";
@@ -12,56 +10,25 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
+  CardFooter, 
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Eye, EyeOff, Lock, User } from "lucide-react";
-import { useRouter } from "next/navigation";
+import useLogin from "../hooks/useLogin.hook";
+import { useState } from "react";
 
 export default function LoginForm() {
-  const router = useRouter();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleGoogleLogin = () => {
-    // The first argument is the provider ID ('google') from your auth.ts config
-    // The second argument is options, like a redirect path after login.
-    signIn("google", { callbackUrl: "/dashboard" });
-  };
-
-  const handleCreateAccount = () => {
-    router.push("/signup");
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const result = await signIn("credentials", {
-      redirect: false,
-      email: formData.email,
-      password: formData.password,
-      callbackUrl: "/dashboard",
-    });
-
-    if (result?.error === "CredentialsSignin") {
-      setErrorMessage("Invalid credentials.");
-    } else {
-      router.replace("/dashboard");
-    }
-  };
+  const {
+    formData,
+    errorMessage,
+    handleInputChange,
+    handleGoogleLogin,
+    handleCreateAccount,
+    handleSubmit,
+  } = useLogin();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
