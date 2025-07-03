@@ -1,9 +1,9 @@
 "use server";
 
 import { GoogleGenAI } from "@google/genai";
-import { atsAnalysisSchema } from "./atsSchema";
-import { createAtsPrompt } from "./atsPrompt";
-import { CVMatch, ATSResponse } from "./types";
+import { atsAnalysisSchema } from "@/app/lib/ai/atsSchema";
+import { createAtsPrompt } from "@/app/lib/ai/atsPrompt";
+import { CVMatch, ATSResponse } from "@/app/types/types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
