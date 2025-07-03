@@ -3,7 +3,7 @@ import { Progress } from "@/components/ui/radix-components/progress";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/radix-components/button";
 import Link from "next/link";
-import { getAnalysisFromCache } from "@/app/lib/redis/analysisCache";
+import { getAnalysisFromCache } from "@/app/lib/redis/redisCacheService";
 import { notFound } from "next/navigation";
 
 export default async function DashboardPage(props: {

@@ -1,25 +1,22 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { usePDFJS } from "@/app/hooks/usePDFJS.hook";
 import useFileHandler from "@/app/hooks/useFileHandler.hook";
 import useJobDescriptionHandler from "@/app/hooks/useJobDescriptionHandler.hook";
+import type * as PDFJS from "pdfjs-dist/types/src/pdf";
+import { ResultWithId } from "@/app/types/types";
 import {
   cacheAnalysis,
   clearFormStateCache,
-} from "@/app/lib/redis/analysisCache";
+} from "@/app/lib/redis/redisCacheService";
 import { findTopCVMatches } from "@/app/lib/ai/atsService";
 import {
   loadCVFormState,
   saveCVFormState,
-} from "@/app/lib/helpers/dashboard/utils";
-import { useRouter } from "next/navigation";
-import type * as PDFJS from "pdfjs-dist/types/src/pdf";
-import { CVMatch } from "@/app/lib/ai/types";
-
-interface ResultWithId extends CVMatch {
-  cacheId: string;
-}
+  getCVFileFromCache,
+} from "@/app/lib/helpers/hooks/cvMatcherHandlerUtils";
 
 const useCVMatcherHandler = () => {
   const [pdfjsInstance, setPdfjsInstance] = useState<typeof PDFJS>();
@@ -176,6 +173,23 @@ const useCVMatcherHandler = () => {
     }
   };
 
+  const handleDownloadCV = async (result: ResultWithId) => {
+    try {
+      const { fileName, fileBlob } = await getCVFileFromCache(result.fileName);
+      const url = window.URL.createObjectURL(fileBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err)
+      alert("Could not download file.");
+    }
+  };
+
   return {
     cvFiles,
     results,
@@ -194,6 +208,7 @@ const useCVMatcherHandler = () => {
     handleCVClick,
     handleDrop,
     handleSubmit,
+    handleDownloadCV,
   };
 };
 

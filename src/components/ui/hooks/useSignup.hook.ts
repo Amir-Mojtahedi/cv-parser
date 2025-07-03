@@ -3,16 +3,9 @@ import { signIn } from "next-auth/react";
 import { signup } from "@/app/lib/auth/authenticate";
 import { signupSchema } from "@/lib/zod";
 import { useRouter } from "next/navigation";
+import { SignupFormData } from "@/app/types/types";
 
-interface SignupFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  company?: string;
-  dateOfBirth?: string;
-}
+
 
 export default function useSignup() {
   const router = useRouter();

@@ -2,11 +2,8 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { login } from "@/app/lib/auth/authenticate";
 import { useRouter } from "next/navigation";
+import { LoginFormData } from "@/app/types/types";
 
-interface LoginFormData {
-  email: string;
-  password: string;
-}
 
 export default function useLogin() {
   const router = useRouter();

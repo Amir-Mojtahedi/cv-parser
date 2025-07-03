@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import type * as PDFJS from "pdfjs-dist/types/src/pdf";
-import { extractTextFromPDF } from "@/app/lib/helpers/dashboard/utils";
+import { extractTextFromPDF } from "@/app/lib/helpers/file/utils";
 
 const useJobDescriptionHandler = (pdfjsInstance: typeof PDFJS) => {
   const [jobDescription, setJobDescription] = useState("");

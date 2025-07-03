@@ -1,8 +1,20 @@
 "use client";
 
 import type React from "react";
-import { Upload, FileText, Briefcase, Users } from "lucide-react";
-import { Button } from "@/components/ui/radix-components/button";
+import useCVMatcherHandler from "@/app/hooks/useCVMatcherHandler.hook";
+import {
+  handleDragLeave,
+  handleDragOver,
+} from "@/app/lib/helpers/dashboard/utils";
+import { getFileIcon } from "@/app/lib/helpers/file/utils";
+import {
+  Upload,
+  FileText,
+  Briefcase,
+  Users,
+  Eye,
+  Download,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,18 +22,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/radix-components/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/radix-components/badge";
-import { Separator } from "@/components/ui/radix-components/separator";
-import {
-  handleDragLeave,
-  handleDragOver,
-  getFileIcon,
-} from "@/app/lib/helpers/dashboard/utils";
-import useCVMatcherHandler from "@/app/hooks/useCVMatcherHandler.hook";
 import Skeleton from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/radix-components/separator";
+import { Button } from "@/components/ui/radix-components/button";
+import { Label } from "@/components/ui/radix-components/label";
+import { Badge } from "@/components/ui/radix-components/badge";
 
 export default function CVMatcher() {
   const {
@@ -42,6 +49,7 @@ export default function CVMatcher() {
     handleCVClick,
     handleDrop,
     handleSubmit,
+    handleDownloadCV,
   } = useCVMatcherHandler();
 
   return (
@@ -302,6 +310,23 @@ export default function CVMatcher() {
                             {result.matchScore}% Match
                           </Badge>
                         </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                          title="Preview CV"
+                        >
+                          <Eye className="h-5 w-5 text-blue-500" />
+                        </button>
+                        <button
+                          type="button"
+                          className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                          title="Download CV"
+                          onClick={() => handleDownloadCV(result)}
+                        >
+                          <Download className="h-5 w-5 text-green-500" />
+                        </button>
                       </div>
                     </div>
                   </div>
