@@ -32,23 +32,24 @@ import { Badge } from "@/components/ui/radix-components/badge";
 
 export default function CVMatcher() {
   const {
-    cvFiles,
+    cvFilesBlob,
     results,
     topCount,
     jobDescMode,
     isProcessing,
     jobDescription,
-    jobDescriptionFile,
+    jobDescriptionFileBlob,
     setJobDescription,
     setTopCount,
     resetForm,
     removeCVFile,
-    handleJobDescriptionFile,
+    handlejobDescriptionFileBlob,
     handleCVFileUpload,
     handleModeChange,
     handleCVClick,
     handleDrop,
     handleSubmit,
+    handlePreviewCV,
     handleDownloadCV,
   } = useCVMatcherHandler();
 
@@ -93,7 +94,7 @@ export default function CVMatcher() {
                       id="cv-upload"
                       type="file"
                       multiple
-                      accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.pptx"
+                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
                       onChange={handleCVFileUpload}
                       className="hidden"
                     />
@@ -103,20 +104,23 @@ export default function CVMatcher() {
                         Click to upload CVs or drag and drop
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        PDF, DOC, DOCX, TXT, PNG, JPG, PPTX files supported
+                        PDF, DOC, DOCX, PNG, JPG files supported
                       </p>
                     </label>
                   </div>
 
-                  {cvFiles.length > 0 && (
+                  {cvFilesBlob.length > 0 && (
                     <div className="mt-4 space-y-2">
-                      {cvFiles.map((cvFile, index) => (
+                      {cvFilesBlob.map((cvFileBlob, index) => (
                         <div
                           key={index}
                           className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded"
                         >
                           <span className="text-sm truncate">
-                            {cvFile.name}
+                            {cvFileBlob.pathname.replace(
+                              /-[\w\d]{20,}(?=\.\w+$)/,
+                              ""
+                            )}
                           </span>
                           <Button
                             type="button"
@@ -172,7 +176,7 @@ export default function CVMatcher() {
                         id="job-description-file"
                         type="file"
                         accept=".pdf"
-                        onChange={(e) => handleJobDescriptionFile(e)}
+                        onChange={(e) => handlejobDescriptionFileBlob(e)}
                         className="hidden"
                       />
                       <label
@@ -190,11 +194,14 @@ export default function CVMatcher() {
                     </div>
                   )}
 
-                  {jobDescriptionFile && jobDescMode === "upload" && (
+                  {jobDescriptionFileBlob && jobDescMode === "upload" && (
                     <div className="mt-4 space-y-2">
                       <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded">
                         <span className="text-sm truncate">
-                          {jobDescriptionFile.name}
+                          {jobDescriptionFileBlob.pathname.replace(
+                            /-[\w\d]{20,}(?=\.\w+$)/,
+                            ""
+                          )}
                         </span>
                       </div>
                     </div>
@@ -210,7 +217,7 @@ export default function CVMatcher() {
                     id="top-count"
                     type="number"
                     min="1"
-                    max={cvFiles.length || 100}
+                    max={cvFilesBlob.length || 100}
                     value={topCount}
                     onChange={(e) =>
                       setTopCount(Number.parseInt(e.target.value) || 1)
@@ -224,8 +231,8 @@ export default function CVMatcher() {
                   <Button
                     type="submit"
                     disabled={
-                      cvFiles.length === 0 ||
-                      !(jobDescription.trim() || jobDescriptionFile) ||
+                      cvFilesBlob.length === 0 ||
+                      !(jobDescription.trim() || jobDescriptionFileBlob) ||
                       isProcessing
                     }
                     className="flex-1"
@@ -263,7 +270,7 @@ export default function CVMatcher() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {cvFiles.map((_, idx) => (
+                {cvFilesBlob.map((_, idx) => (
                   <div key={idx} className="space-y-4">
                     {idx > 0 && <Separator />}
                     <div className="flex items-center gap-3">
@@ -304,7 +311,10 @@ export default function CVMatcher() {
                         </span>
                         <div>
                           <h3 className="font-semibold text-lg">
-                            {result.fileName}
+                            {result.fileName.replace(
+                              /-[\w\d]{20,}(?=\.\w+$)/,
+                              ""
+                            )}
                           </h3>
                           <Badge variant="secondary" className="text-sm mt-1">
                             {result.matchScore}% Match
@@ -316,6 +326,7 @@ export default function CVMatcher() {
                           type="button"
                           className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
                           title="Preview CV"
+                          onClick={() => handlePreviewCV(result)}
                         >
                           <Eye className="h-5 w-5 text-blue-500" />
                         </button>

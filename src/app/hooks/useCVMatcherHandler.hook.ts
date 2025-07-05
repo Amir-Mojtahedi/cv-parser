@@ -29,7 +29,7 @@ const useCVMatcherHandler = () => {
   );
 
   const {
-    cvFiles,
+    cvFilesBlob,
     handleBulkCVFilesUpload,
     handleCVFileUpload,
     removeCVFile,
@@ -41,9 +41,9 @@ const useCVMatcherHandler = () => {
     setJobDescription,
     extractedJobDescription,
     setExtractedJobDescription,
-    jobDescriptionFile,
-    setJobDescriptionFile,
-    handleJobDescriptionFile,
+    jobDescriptionFileBlob,
+    setjobDescriptionFileBlob,
+    handlejobDescriptionFileBlob,
     resetJobDescriptions,
   } = useJobDescriptionHandler(pdfjsInstance!);
 
@@ -56,8 +56,8 @@ const useCVMatcherHandler = () => {
 
   useEffect(() => {
     loadCVFormState({
-      setCVs: handleBulkCVFilesUpload,
-      setJDFile: setJobDescriptionFile,
+      setcvFilesBlob: handleBulkCVFilesUpload,
+      setJDFileBlob: setjobDescriptionFileBlob,
       setExtractedJD: setExtractedJobDescription,
       setJD: setJobDescription,
       setTopCount,
@@ -68,8 +68,8 @@ const useCVMatcherHandler = () => {
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       saveCVFormState({
-        cvFiles,
-        jobDescriptionFile,
+        cvFilesBlob,
+        jobDescriptionFileBlob,
         extractedJobDescription,
         jobDescription,
         topCount,
@@ -79,8 +79,8 @@ const useCVMatcherHandler = () => {
 
     return () => clearTimeout(debounceTimer);
   }, [
-    cvFiles,
-    jobDescriptionFile,
+    cvFilesBlob,
+    jobDescriptionFileBlob,
     extractedJobDescription,
     jobDescription,
     topCount,
@@ -136,7 +136,7 @@ const useCVMatcherHandler = () => {
       const event = {
         target: { files: [validFiles[0]] },
       } as unknown as React.ChangeEvent<HTMLInputElement>;
-      handleJobDescriptionFile(event);
+      handlejobDescriptionFileBlob(event);
     } else {
       const event = {
         target: { files: validFiles },
@@ -153,7 +153,7 @@ const useCVMatcherHandler = () => {
       const finalJobDescription =
         jobDescMode === "upload" ? extractedJobDescription : jobDescription;
       const matches = await findTopCVMatches(
-        cvFiles,
+        cvFilesBlob,
         finalJobDescription,
         topCount
       );
@@ -173,41 +173,56 @@ const useCVMatcherHandler = () => {
     }
   };
 
+  const handlePreviewCV = async (result: ResultWithId) => {
+    try {
+      const cvFileBlob = await getCVFileFromCache(result.fileName);
+      if (!cvFileBlob) {
+        throw new Error("File URL could not be retrieved.");
+      }
+      window.open(cvFileBlob.url, "_blank");
+    } catch (err) {
+      console.error("Preview failed:", err);
+      alert("Could not preview the file.");
+    }
+  };
+
   const handleDownloadCV = async (result: ResultWithId) => {
     try {
-      const { fileName, fileBlob } = await getCVFileFromCache(result.fileName);
-      const url = window.URL.createObjectURL(fileBlob);
+      const cvFileBlob = await getCVFileFromCache(result.fileName);
+      if (!cvFileBlob) {
+        throw new Error("File URL could not be retrieved.");
+      }
       const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
+      a.href = cvFileBlob.downloadUrl;
+      a.download = result.fileName.replace(/-[\w\d]{20,}(?=\.\w+$)/, "");
       document.body.appendChild(a);
       a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (err) {
-      console.error(err)
-      alert("Could not download file.");
+      console.error("Download failed:", err);
+      alert("Could not download the file.");
     }
   };
 
   return {
-    cvFiles,
+    cvFilesBlob,
     results,
     topCount,
     jobDescMode,
     isProcessing,
     jobDescription,
-    jobDescriptionFile,
+    jobDescriptionFileBlob,
     setJobDescription,
     setTopCount,
     resetForm,
     removeCVFile,
-    handleJobDescriptionFile,
+    handlejobDescriptionFileBlob,
     handleCVFileUpload,
     handleModeChange,
     handleCVClick,
     handleDrop,
     handleSubmit,
+    handlePreviewCV,
     handleDownloadCV,
   };
 };

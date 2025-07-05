@@ -1,3 +1,5 @@
+import { type PutBlobResult } from "@vercel/blob";
+
 export interface AnalysisDetail {
   score: number;
   reasoning: string;
@@ -28,8 +30,8 @@ export interface ResultWithId extends CVMatch {
 }
 
 export interface FormState {
-  serializedCVFiles?: SerializableFile[];
-  serializedJobDescriptionFile?: SerializableFile;
+  serializedCVFilesBlob?: string;
+  serializedJobDescriptionFileBlob?: string;
   extractedJobDescription?: string;
   jobDescription?: string;
   topCount?: number;
@@ -59,8 +61,8 @@ export type SerializableFile = {
 };
 
 export type LoadCVFormStateSetters = {
-  setCVs: (files: File[]) => void;
-  setJDFile: (file: File) => void;
+  setcvFilesBlob: (cvFilesBlob: PutBlobResult[]) => void;
+  setJDFileBlob: (jdFileBlob: PutBlobResult) => void;
   setExtractedJD: (extractedJd: string) => void;
   setJD: (jd: string) => void;
   setTopCount: (count: number) => void;

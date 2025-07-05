@@ -1,35 +1,57 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { upload } from "@vercel/blob/client";
+import { type PutBlobResult } from "@vercel/blob";
 import type * as PDFJS from "pdfjs-dist/types/src/pdf";
 import { extractTextFromPDF } from "@/app/lib/helpers/file/utils";
 
 const useJobDescriptionHandler = (pdfjsInstance: typeof PDFJS) => {
   const [jobDescription, setJobDescription] = useState("");
   const [extractedJobDescription, setExtractedJobDescription] = useState("");
-  const [jobDescriptionFile, setJobDescriptionFile] = useState<
-    File | undefined
+  const [jobDescriptionFileBlob, setjobDescriptionFileBlob] = useState<
+    PutBlobResult | undefined
   >(undefined);
 
-  const handleJobDescriptionFile = useCallback(
+  const handlejobDescriptionFileBlob = useCallback(
     async (event?: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event?.target.files?.[0];
-      if (!file) {
-        setJobDescriptionFile(undefined);
+      const jobDescriptionFile = event?.target.files?.[0];
+      if (!jobDescriptionFile) {
+        setjobDescriptionFileBlob(undefined);
         setExtractedJobDescription("");
         return;
       }
-      setJobDescriptionFile(file);
-      const extension = file.name.split(".").pop()?.toLowerCase();
+      const uploadedJobDescriptionFile = await upload(
+        jobDescriptionFile.name,
+        jobDescriptionFile,
+        {
+          access: "public",
+          handleUploadUrl: "/api/job-description/upload",
+        }
+      );
+      setjobDescriptionFileBlob(uploadedJobDescriptionFile);
+      const extension = uploadedJobDescriptionFile.pathname
+        .split(".")
+        .pop()
+        ?.toLowerCase();
       try {
         if (extension === "pdf") {
+          const fileName =
+            uploadedJobDescriptionFile.url.split("/").pop() ||
+            uploadedJobDescriptionFile.url;
+          const response = await fetch(uploadedJobDescriptionFile.url);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch file: ${response.statusText}`);
+          }
+
+          const arrayBuffer = await response.arrayBuffer();
+          const mimeType =
+            response.headers.get("Content-Type") || "application/octet-stream";
+
+          const file = new File([arrayBuffer], fileName, { type: mimeType });
           const fullText = await extractTextFromPDF(pdfjsInstance, file);
 
           setExtractedJobDescription(fullText);
-        } else {
-          // Fall back to text() for txt/docx/doc
-          const text = await file.text();
-          setExtractedJobDescription(text);
         }
       } catch (error) {
         console.error("Error reading file:", error);
@@ -41,7 +63,7 @@ const useJobDescriptionHandler = (pdfjsInstance: typeof PDFJS) => {
   const resetJobDescriptions = useCallback(() => {
     setJobDescription("");
     setExtractedJobDescription("");
-    setJobDescriptionFile(undefined);
+    setjobDescriptionFileBlob(undefined);
   }, []);
 
   return {
@@ -49,9 +71,9 @@ const useJobDescriptionHandler = (pdfjsInstance: typeof PDFJS) => {
     setJobDescription,
     extractedJobDescription,
     setExtractedJobDescription,
-    jobDescriptionFile,
-    setJobDescriptionFile,
-    handleJobDescriptionFile,
+    jobDescriptionFileBlob,
+    setjobDescriptionFileBlob,
+    handlejobDescriptionFileBlob,
     resetJobDescriptions,
   };
 };

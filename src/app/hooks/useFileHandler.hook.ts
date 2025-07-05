@@ -1,32 +1,44 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { type PutBlobResult } from "@vercel/blob";
+import { upload } from "@vercel/blob/client";
 
 const useFileHandler = () => {
-  const [cvFiles, setCVFiles] = useState<File[]>([]);
+  const [cvFilesBlob, setcvFilesBlob] = useState<PutBlobResult[]>([]);
 
   const handleCVFileUpload = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const selectedFiles = Array.from(event.target.files || []);
-      setCVFiles((prev) => [...prev, ...selectedFiles]);
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const selectedCVFiles = Array.from(event.target.files || []);
+      const uploadedCVsPromise = selectedCVFiles.map((cvFile) => {
+        return upload(cvFile.name, cvFile, {
+          access: "public",
+          handleUploadUrl: "/api/cv/upload",
+        });
+      });
+      const uploadedCVs = await Promise.all(uploadedCVsPromise);
+      setcvFilesBlob((prev) => [...prev, ...uploadedCVs]);
     },
     []
   );
 
-  const handleBulkCVFilesUpload = useCallback((cvFiles: File[]) => {
-    setCVFiles(cvFiles);
-  }, []);
+  const handleBulkCVFilesUpload = useCallback(
+    (cvFilesBlob: PutBlobResult[]) => {
+      setcvFilesBlob(cvFilesBlob);
+    },
+    []
+  );
 
   const removeCVFile = useCallback((index: number) => {
-    setCVFiles((prev) => prev.filter((_, i) => i !== index));
+    setcvFilesBlob((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const removeAllCVFiles = useCallback(() => {
-    setCVFiles([]);
+    setcvFilesBlob([]);
   }, []);
 
   return {
-    cvFiles,
+    cvFilesBlob,
     handleBulkCVFilesUpload,
     handleCVFileUpload,
     removeCVFile,
