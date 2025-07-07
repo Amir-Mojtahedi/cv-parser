@@ -5,6 +5,7 @@ import { atsAnalysisSchema } from "@/app/lib/ai/atsSchema";
 import { createAtsPrompt } from "@/app/lib/ai/atsPrompt";
 import { CVMatch, ATSResponse } from "@/app/types/types";
 import { PutBlobResult } from "@vercel/blob";
+import { convertDocxToText } from "@/app/lib/helpers/file/utils";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
@@ -62,13 +63,51 @@ async function analyzeCV(
 }
 
 /**
+ * Analyzes CV text against a job description using Google's Gemini AI model.
+ * @param {string} cvText - The plain text content of the CV.
+ * @param {string} fileName - The original name of the file for context.
+ * @param {string} jobDescription - The job description text to match against.
+ * @returns {Promise<ATSResponse | null>} A promise that resolves to the analysis results or null.
+ */
+async function analyzeCvText(
+  cvText: string,
+  fileName: string,
+  jobDescription: string
+): Promise<ATSResponse | null> {
+  try {
+    // Combine the main prompt with the extracted CV text
+    const atsPrompt = createAtsPrompt(jobDescription);
+    const fullPrompt = `${atsPrompt}\n\n---CV CONTENT---\n\n${cvText}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ text: fullPrompt }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: atsAnalysisSchema,
+      },
+    });
+
+    // The response parsing logic remains the same
+    const responseText = response.text?.trim();
+    if (responseText) {
+      return JSON.parse(responseText) as ATSResponse;
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error processing text from file ${fileName}:`, error);
+    return null;
+  }
+}
+
+/**
  * Analyzes multiple CV files against a job description and returns the top matches.
- * 
+ *
  * This function fetches CV files from Vercel Blob storage URLs, analyzes each CV against
  * the provided job description using Google's Gemini AI model, and returns the top N
  * candidates sorted by their match scores. If any CV fails to process, it returns a
  * structured error object with zero scores and error reasoning.
- * 
+ *
  * @param {PutBlobResult[]} cvFilesBlob - An array of Vercel Blob storage objects containing CV file metadata and URLs.
  * @param {string} jobDescription - The job description text to match CVs against.
  * @param {number} topN - The number of top candidates to return (default: 5).
@@ -91,17 +130,34 @@ export async function findTopCVMatches(
           throw new Error(`Failed to fetch file: ${response.statusText}`);
         }
 
-        const arrayBuffer = await response.arrayBuffer();
         const mimeType =
           response.headers.get("Content-Type") || "application/octet-stream";
 
-        const file = new File([arrayBuffer], fileName, { type: mimeType });
+        const buffer = Buffer.from(await response.arrayBuffer());
 
-        const analysisResult = await analyzeCV(file, jobDescription);
+        let analysisResult: ATSResponse | null;
+
+        if (
+          mimeType ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ) {
+          const cvText = await convertDocxToText(buffer);
+          analysisResult = await analyzeCvText(
+            cvText,
+            fileName,
+            jobDescription
+          );
+        } else {
+          // It's another file type (PDF, etc.): analyze the file directly
+          const fileToAnalyze = new File([buffer], fileName, {
+            type: mimeType,
+          });
+          analysisResult = await analyzeCV(fileToAnalyze, jobDescription);
+        }
 
         if (analysisResult) {
           return {
-            fileName: file.name,
+            fileName: fileName,
             matchScore: analysisResult.grade,
             analysis: analysisResult.analysis,
           };
@@ -113,7 +169,6 @@ export async function findTopCVMatches(
           `Failed to process CV from URL ${cvFileBlob.url}:`,
           error
         );
-        // Return a structured error object if fetching or analysis fails
         return {
           fileName: fileName,
           matchScore: 0,
@@ -134,7 +189,5 @@ export async function findTopCVMatches(
   );
 
   const allMatches = await Promise.all(analysisPromises);
-
-  // Sort and return the top N results as before
   return allMatches.sort((a, b) => b.matchScore - a.matchScore).slice(0, topN);
 }

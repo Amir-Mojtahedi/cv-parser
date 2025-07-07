@@ -322,14 +322,20 @@ export default function CVMatcher() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-                          title="Preview CV"
-                          onClick={() => handlePreviewCV(result)}
-                        >
-                          <Eye className="h-5 w-5 text-blue-500" />
-                        </button>
+                        {(() => {
+                          const isPdf = result.fileName.toLowerCase().endsWith('.pdf');
+                          return (
+                            <button
+                              type="button"
+                              className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 ${!isPdf ? 'cursor-not-allowed' : ''}`}
+                              title="Preview CV"
+                              onClick={() => isPdf && handlePreviewCV(result)}
+                              disabled={!isPdf}
+                            >
+                              <Eye className={`h-5 w-5 ${isPdf ? 'text-blue-500' : 'text-gray-400'}`} />
+                            </button>
+                          );
+                        })()}
                         <button
                           type="button"
                           className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700"

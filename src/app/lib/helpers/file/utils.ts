@@ -1,3 +1,4 @@
+import mammoth from "mammoth";
 import type * as PDFJS from "pdfjs-dist/types/src/pdf";
 import { TextItem } from "pdfjs-dist/types/src/display/api";
 import { SerializableFile } from "@/app/types/types";
@@ -98,4 +99,21 @@ async function extractTextFromPDF(
   return fullText;
 }
 
-export { serializeFile, deserializeFile, getFileIcon, extractTextFromPDF };
+/**
+ * Converts a DOCX file buffer to plain text using mammoth.
+ * @param {Buffer} docxBuffer The DOCX buffer.
+ * @returns {Promise<string>} The extracted plain text.
+ */
+async function convertDocxToText(docxBuffer: Buffer): Promise<string> {
+  try {
+    const { value: text } = await mammoth.extractRawText({
+      buffer: docxBuffer,
+    });
+    return text.trim();
+  } catch (error) {
+    console.error("Error extracting text from DOCX:", error);
+    throw new Error("Failed to extract text.");
+  }
+}
+
+export { serializeFile, deserializeFile, getFileIcon, extractTextFromPDF, convertDocxToText };
