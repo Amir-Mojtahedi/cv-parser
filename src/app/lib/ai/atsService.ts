@@ -6,6 +6,7 @@ import { createAtsPrompt } from "@/app/lib/ai/atsPrompt";
 import { CVMatch, ATSResponse } from "@/app/types/types";
 import { PutBlobResult } from "@vercel/blob";
 import { convertDocxToText } from "@/app/lib/helpers/file/utils";
+import { convertPdfToText } from "@/app/lib/ai/utils";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
@@ -28,7 +29,7 @@ async function analyzeCV(
     const prompt = createAtsPrompt(jobDescription);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash-lite",
       contents: [
         { text: prompt },
         {
@@ -80,7 +81,7 @@ async function analyzeCvText(
     const fullPrompt = `${atsPrompt}\n\n---CV CONTENT---\n\n${cvText}`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.0-flash-lite",
       contents: [{ text: fullPrompt }],
       config: {
         responseMimeType: "application/json",
@@ -147,8 +148,14 @@ export async function findTopCVMatches(
             fileName,
             jobDescription
           );
+        } else if (mimeType === "application/pdf") {
+          const cvText = await convertPdfToText(buffer);
+          analysisResult = await analyzeCvText(
+            cvText,
+            fileName,
+            jobDescription
+          );
         } else {
-          // It's another file type (PDF, etc.): analyze the file directly
           const fileToAnalyze = new File([buffer], fileName, {
             type: mimeType,
           });

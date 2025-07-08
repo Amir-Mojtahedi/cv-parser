@@ -116,4 +116,10 @@ async function convertDocxToText(docxBuffer: Buffer): Promise<string> {
   }
 }
 
-export { serializeFile, deserializeFile, getFileIcon, extractTextFromPDF, convertDocxToText };
+export {
+  serializeFile,
+  deserializeFile,
+  getFileIcon,
+  extractTextFromPDF,
+  convertDocxToText,
+};
