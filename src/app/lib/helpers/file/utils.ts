@@ -1,6 +1,4 @@
 import mammoth from "mammoth";
-import type * as PDFJS from "pdfjs-dist/types/src/pdf";
-import { TextItem } from "pdfjs-dist/types/src/display/api";
 import { SerializableFile } from "@/app/types/types";
 
 /**
@@ -64,42 +62,6 @@ const getFileIcon = (fileName: string) => {
 };
 
 /**
- * Parses a PDF file and extracts its text content.
- * @param {PDFJS} pdfjsInstance - The initialized PDF.js library instance.
- * @param {File} [file] - The PDF file to process.
- * @returns {Promise<string>} A promise that resolves with the extracted text.
- */
-async function extractTextFromPDF(
-  pdfjsInstance: typeof PDFJS,
-  file: File
-): Promise<string> {
-  if (!pdfjsInstance) {
-    throw new Error("PDF.js instance has not been initialized.");
-  }
-
-  const typedArray = new Uint8Array(await file.arrayBuffer());
-
-  const loadingTask = pdfjsInstance.getDocument(typedArray);
-  const pdf = await loadingTask.promise;
-
-  let fullText = "";
-
-  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    const page = await pdf.getPage(pageNum);
-    const content = await page.getTextContent();
-
-    const text = content.items
-      .filter((item): item is TextItem => "str" in item)
-      .map((item) => item.str)
-      .join(" ");
-
-    fullText += text + "\n";
-  }
-
-  return fullText;
-}
-
-/**
  * Converts a DOCX file buffer to plain text using mammoth.
  * @param {Buffer} docxBuffer The DOCX buffer.
  * @returns {Promise<string>} The extracted plain text.
@@ -116,10 +78,4 @@ async function convertDocxToText(docxBuffer: Buffer): Promise<string> {
   }
 }
 
-export {
-  serializeFile,
-  deserializeFile,
-  getFileIcon,
-  extractTextFromPDF,
-  convertDocxToText,
-};
+export { serializeFile, deserializeFile, getFileIcon, convertDocxToText };

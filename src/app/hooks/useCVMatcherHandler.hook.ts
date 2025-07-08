@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { usePDFJS } from "@/app/hooks/usePDFJS.hook";
 import useFileHandler from "@/app/hooks/useFileHandler.hook";
 import useJobDescriptionHandler from "@/app/hooks/useJobDescriptionHandler.hook";
-import type * as PDFJS from "pdfjs-dist/types/src/pdf";
 import { ResultWithId } from "@/app/types/types";
 import {
   cacheAnalysis,
@@ -19,15 +17,6 @@ import {
 } from "@/app/lib/helpers/hooks/cvMatcherHandlerUtils";
 
 const useCVMatcherHandler = () => {
-  const [pdfjsInstance, setPdfjsInstance] = useState<typeof PDFJS>();
-
-  usePDFJS(
-    useCallback(async (pdfjs) => {
-      setPdfjsInstance(pdfjs);
-    }, []),
-    []
-  );
-
   const {
     cvFilesBlob,
     handleBulkCVFilesUpload,
@@ -45,7 +34,7 @@ const useCVMatcherHandler = () => {
     setjobDescriptionFileBlob,
     handlejobDescriptionFileBlob,
     resetJobDescriptions,
-  } = useJobDescriptionHandler(pdfjsInstance!);
+  } = useJobDescriptionHandler();
 
   const router = useRouter();
 

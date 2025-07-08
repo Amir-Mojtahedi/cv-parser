@@ -3,10 +3,8 @@
 import { useState, useCallback } from "react";
 import { upload } from "@vercel/blob/client";
 import { type PutBlobResult } from "@vercel/blob";
-import type * as PDFJS from "pdfjs-dist/types/src/pdf";
-import { extractTextFromPDF } from "@/app/lib/helpers/file/utils";
 
-const useJobDescriptionHandler = (pdfjsInstance: typeof PDFJS) => {
+const useJobDescriptionHandler = () => {
   const [jobDescription, setJobDescription] = useState("");
   const [extractedJobDescription, setExtractedJobDescription] = useState("");
   const [jobDescriptionFileBlob, setjobDescriptionFileBlob] = useState<
@@ -36,28 +34,27 @@ const useJobDescriptionHandler = (pdfjsInstance: typeof PDFJS) => {
         ?.toLowerCase();
       try {
         if (extension === "pdf") {
-          const fileName =
-            uploadedJobDescriptionFile.url.split("/").pop() ||
-            uploadedJobDescriptionFile.url;
-          const response = await fetch(uploadedJobDescriptionFile.url);
+          const response = await fetch("/api/job-description/extract", {
+            method: "POST",
+            body: (() => {
+              const formData = new FormData();
+              formData.append("file", jobDescriptionFile);
+              return formData;
+            })(),
+          });
           if (!response.ok) {
-            throw new Error(`Failed to fetch file: ${response.statusText}`);
+            throw new Error(`Failed to extract text: ${response.statusText}`);
           }
-
-          const arrayBuffer = await response.arrayBuffer();
-          const mimeType =
-            response.headers.get("Content-Type") || "application/octet-stream";
-
-          const file = new File([arrayBuffer], fileName, { type: mimeType });
-          const fullText = await extractTextFromPDF(pdfjsInstance, file);
-
-          setExtractedJobDescription(fullText);
+          const data = await response.json();
+          setExtractedJobDescription(data.text || "");
+        } else {
+          setExtractedJobDescription("");
         }
       } catch (error) {
         console.error("Error reading file:", error);
       }
     },
-    [pdfjsInstance]
+    []
   );
 
   const resetJobDescriptions = useCallback(() => {
