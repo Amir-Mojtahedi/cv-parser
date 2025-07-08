@@ -29,7 +29,7 @@ async function analyzeCV(
     const prompt = createAtsPrompt(jobDescription);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5",
+      model: "gemini-2.5-flash",
       contents: [
         { text: prompt },
         {
@@ -81,7 +81,7 @@ async function analyzeCvText(
     const fullPrompt = `${atsPrompt}\n\n---CV CONTENT---\n\n${cvText}`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5",
+      model: "gemini-2.5-flash",
       contents: [{ text: fullPrompt }],
       config: {
         responseMimeType: "application/json",
