@@ -92,7 +92,7 @@ export async function findTopCVMatches(
   const allCvTexts = await Promise.all(cvTextPromises);
   const validCvTexts = allCvTexts.filter((cv) => cv.cvText);
 
-  const combinedCVMap = combineCVTextsForPrompt(validCvTexts, 8);
+  const combinedCVMap = combineCVTextsForPrompt(validCvTexts, 3);
 
   const batchAnalysisPromises = Object.entries(combinedCVMap).map(
     async ([fileNamesKey, combinedCVText]) => {
