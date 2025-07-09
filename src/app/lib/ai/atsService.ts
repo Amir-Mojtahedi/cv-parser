@@ -82,7 +82,7 @@ export async function findTopCVMatches(
     if (mimeType.includes("wordprocessingml")) {
       cvText = await convertDocxToText(buffer);
     } else if (mimeType === "application/pdf") {
-      cvText = await convertPdfToText(buffer);
+      cvText = await convertPdfToText(blob.url);
     }
     // You could add more types like 'text/plain' here if needed
 

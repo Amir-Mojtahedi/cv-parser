@@ -5,17 +5,14 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file");
+    const body = await req.json();
+    const { fileUrl } = body;
 
-    if (!file || typeof file === "string") {
-      return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
+    if (!fileUrl || typeof fileUrl !== "string") {
+      return NextResponse.json({ error: "No file URL provided." }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const text = await convertPdfToText(buffer);
+    const text = await convertPdfToText(fileUrl);
 
     return NextResponse.json({ text });
   } catch (error) {
