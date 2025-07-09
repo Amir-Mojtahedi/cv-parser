@@ -9,44 +9,74 @@ Your final output **must** be a single JSON object with one key: "cvAnalyses". T
 
 For each CV you process, you **must** include the exact "fileName" from its separator in the corresponding JSON output object.
 
-Here are the evaluation criteria and their strict rules:
+Here are the evaluation criteria and their strict scoring rules:
 
-1.  **Experience (Weight: 35%)**
-    -   Base the years of experience **only** on stated dates in the CV. If dates are ambiguous, do not guess; state the ambiguity in your reasoning.
-    -   Direct Experience: Quantify the years of experience the candidate has in the primary role mentioned in the job description (e.g., "React Developer").
-    -   Similar Experience: If the candidate has experience in a similar technology (e.g., Angular for a React role), score it lower than direct experience.
-    -   **Requirement Matching:**
-        -   Exceeds requirement: 90–100
-        -   Meets requirement: 80–90
-        -   Close to requirement (e.g., 4 years for a 5-year requirement): 65–80
-        -   Significantly less than requirement or not present: 0–50
+---
 
-2.  **Hard Skills (Weight: 25%)**
-    -   Identify the hard skills (programming languages, frameworks, software) explicitly required in the job description.
-    -   If a required skill is **not** explicitly listed in the CV, it must not be counted. Do not assume a skill exists based on a project description.
-    -   A near-perfect match in the primary required technologies receives the highest score (90–100).
+1. **Experience (Weight: 35%)**
+   - Base the years of experience **only** on stated dates in the CV. If dates are ambiguous or missing, do not guess; instead, explicitly state the ambiguity in your reasoning.
+   - Direct Experience: Quantify the years in the **exact** role mentioned in the job description.
+   - Similar Experience (e.g., Angular for a React role): Counted with reduced score.
+   - **Scoring Rules**:
+     - Exceeds requirement (e.g., 7+ years for a 5-year requirement): 90–100
+     - Meets requirement exactly: 80–90
+     - Close to requirement (e.g., 4 years for a 5-year requirement): 65–80
+     - Significantly less than requirement or unclear: 0–50
 
-3.  **Education (Weight: 15%)**
-    -   Score based on the degree title and field mentioned in the CV.
-    -   A direct match to the required field (e.g., "Computer Science") receives a high score (85-100).
-    -   A relevant but not direct match (e.g., "Information Technology") receives a moderate score.
-    -   Do not consider the institution's name or reputation.
+---
 
-4.  **Location (Approximation) (Weight: 10%)**
-    -   If the candidate’s location (city, state, country) is **not explicitly mentioned** in the CV, the score for this category **must be 0**.
-    -   Do not infer location from company headquarters, phone numbers, or any other data.
-    -   If location is mentioned, score as follows:
-        -   Same city/timezone as job: 85–100
-        -   Same province/state or nearby timezone: 65–85
-        -   Otherwise: 0–40
+2. **Hard Skills (Weight: 25%)**
+   - Match only **explicitly mentioned** hard skills from the job description: programming languages, libraries, frameworks, tools, etc.
+   - Do **not infer** skills based on project titles or technologies.
+   - Near-perfect match with all required technologies: 90–100
+   - Missing 1–2 required hard skills: 70–90
+   - Missing most key skills: 40–70
+   - No matching hard skills: 0–40
 
-5.  **Diversity in Experience (Weight: 10%)**
-    -   Score based on additional professional keywords found in the CV that were not in the job description but are relevant to the broader field (e.g., 'AWS', 'Docker', 'Agile' for a developer role).
+---
 
-6.  **Soft Skills (Weight: 5%)**
-    -   **This is the only category where you are permitted to infer skills.**
-    -   Infer skills from job titles (e.g., "Team Lead" implies leadership) and from responsibilities described in the CV.
-    -   Also, identify any soft skills explicitly mentioned in the CV.
+3. **Education (Weight: 15%)**
+   - Match based on degree **title and field** only. Ignore institution, GPA, or certifications.
+   - **Scoring Rules**:
+     - Exact degree and field match (e.g., B.Sc. in Computer Science): 90–100
+     - Related field (e.g., Information Systems): 70–90
+     - Non-related field or only partial degree listed: 40–70
+     - No education info or unrelated field: 0–40
+
+---
+
+4. **Location (Weight: 10%)**
+   - The candidate must state their location explicitly **or** include a valid phone number/area code from which location can be reliably inferred.
+   - Do **not** guess location from company address or country name in job titles.
+   - **Scoring Rules**:
+     - Same city or timezone as job: 90–100
+     - Same province/state or close timezone: 70–90
+     - Country-level match but far timezone: 40–70
+     - No identifiable location **or no phone/area code**: 0
+
+---
+
+5. **Diversity in Experience (Weight: 10%)**
+   - Award points for extra skills **not listed in the job description**, but valuable in the broader industry (e.g., Docker, AWS, Kubernetes, CI/CD, Agile).
+   - **Scoring Rules**:
+     - 5+ relevant extra tools or methodologies: 90–100
+     - 3–4 extras: 70–90
+     - 1–2 extras: 50–70
+     - No relevant extras: 0–50
+
+---
+
+6. **Soft Skills (Weight: 5%)**
+   - You are allowed to infer from:
+     - Job titles (e.g., "Manager" ⇒ leadership).
+     - Described responsibilities (e.g., "led a team", "communicated with stakeholders").
+   - **Scoring Rules**:
+     - 3+ soft skills inferred or stated: 90–100
+     - 2 soft skills: 70–90
+     - 1 soft skill: 50–70
+     - No soft skills inferred or stated: 0–50
+
+---
 
 Job Description:
 ${jobDescription}
