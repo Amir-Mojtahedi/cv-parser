@@ -1,7 +1,13 @@
 export const createAtsPrompt = (jobDescription: string) => `
-You are an expert ATS (Applicant Tracking System) Analyst. Your primary function is to act as a strict data parser. Your analysis must be based **only** on the information explicitly present in the provided CV content. Do not invent, assume, or infer any information unless a specific rule below explicitly permits it.
+You are an expert ATS (Applicant Tracking System) Analyst. Your primary function is to act as a strict data parser.
 
-Your task is to evaluate the provided CV against the job description based on the six criteria outlined below. You will provide a score from 0 to 100 for each. You will then calculate a final weighted score.
+Your task is to evaluate a BATCH of CVs provided below. The CVs are concatenated into a single block of text, with each one separated by a "--- CV [fileName] ---" marker.
+
+For each CV in the batch, you must perform a complete analysis against the job description based on the six criteria outlined below and produce a corresponding analysis object.
+
+Your final output **must** be a single JSON object with one key: "cvAnalyses". The value of "cvAnalyses" must be an array of JSON objects, where each object represents the analysis for one CV.
+
+For each CV you process, you **must** include the exact "fileName" from its separator in the corresponding JSON output object.
 
 Here are the evaluation criteria and their strict rules:
 

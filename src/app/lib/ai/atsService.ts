@@ -1,118 +1,68 @@
 "use server";
 
 import { GoogleGenAI } from "@google/genai";
-import { atsAnalysisSchema } from "@/app/lib/ai/atsSchema";
+import { atsBatchAnalysisSchema } from "@/app/lib/ai/atsSchema";
 import { createAtsPrompt } from "@/app/lib/ai/atsPrompt";
-import { CVMatch, ATSResponse } from "@/app/types/types";
+import { CVMatch } from "@/app/types/types";
 import { PutBlobResult } from "@vercel/blob";
-import { convertDocxToText } from "@/app/lib/helpers/file/utils";
+import {
+  convertDocxToText,
+  combineCVTextsForPrompt,
+} from "@/app/lib/helpers/file/utils";
 import { convertPdfToText } from "@/app/lib/ai/utils";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Analyzes a CV file against a job description using Google's Gemini AI model.
- * Converts the file to base64, sends it to the AI model with a structured prompt,
- * and returns the analysis results in JSON format.
- * @param {File} file - The CV file to analyze.
+ * Analyzes a BATCH of CV texts against a job description.
+ * @param {string} combinedCvText - A single string containing multiple CVs separated by markers.
  * @param {string} jobDescription - The job description text to match against.
- * @returns {Promise<ATSResponse | null>} A promise that resolves to the analysis results or null if processing fails.
+ * @returns {Promise<CVMatch[] | null>} A promise that resolves to an array of analysis results.
  */
-async function analyzeCV(
-  file: File,
+async function analyzeCvBatch(
+  combinedCvText: string,
   jobDescription: string
-): Promise<ATSResponse | null> {
+): Promise<CVMatch[] | null> {
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
-
-    const prompt = createAtsPrompt(jobDescription);
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        { text: prompt },
-        {
-          inlineData: {
-            data: Buffer.from(buffer).toString("base64"),
-            mimeType: file.type,
-          },
-        },
-      ],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: atsAnalysisSchema,
-      },
-    });
-
-    const responseText = response.text?.trim();
-
-    if (responseText) {
-      try {
-        return JSON.parse(responseText) as ATSResponse;
-      } catch (jsonError) {
-        console.error(`Error parsing JSON for file ${file.name}:`, jsonError);
-        console.error("Raw response text:", responseText);
-        return null;
-      }
-    }
-    return null;
-  } catch (error) {
-    console.error(`Error processing file ${file.name}:`, error);
-    return null;
-  }
-}
-
-/**
- * Analyzes CV text against a job description using Google's Gemini AI model.
- * @param {string} cvText - The plain text content of the CV.
- * @param {string} fileName - The original name of the file for context.
- * @param {string} jobDescription - The job description text to match against.
- * @returns {Promise<ATSResponse | null>} A promise that resolves to the analysis results or null.
- */
-async function analyzeCvText(
-  cvText: string,
-  fileName: string,
-  jobDescription: string
-): Promise<ATSResponse | null> {
-  try {
-    // Combine the main prompt with the extracted CV text
     const atsPrompt = createAtsPrompt(jobDescription);
-    const fullPrompt = `${atsPrompt}\n\n---CV CONTENT---\n\n${cvText}`;
+    const fullPrompt = `${atsPrompt}\n\n---CV CONTENT---\n\n${combinedCvText}`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: [{ text: fullPrompt }],
       config: {
         responseMimeType: "application/json",
-        responseSchema: atsAnalysisSchema,
+        responseSchema: atsBatchAnalysisSchema,
       },
     });
 
-    // The response parsing logic remains the same
     const responseText = response.text?.trim();
     if (responseText) {
-      return JSON.parse(responseText) as ATSResponse;
+      const parsedResponse = JSON.parse(responseText);
+      return parsedResponse.cvAnalyses || [];
     }
     return null;
   } catch (error) {
-    console.error(`Error processing text from file ${fileName}:`, error);
+    console.error(`Error analyzing CV text batch:`, error);
     return null;
   }
 }
 
 /**
- * Analyzes multiple CV files against a job description and returns the top matches.
+ * Finds and returns the top N CV matches for a given job description.
  *
- * This function fetches CV files from Vercel Blob storage URLs, analyzes each CV against
- * the provided job description using Google's Gemini AI model, and returns the top N
- * candidates sorted by their match scores. If any CV fails to process, it returns a
- * structured error object with zero scores and error reasoning.
+ * This function processes an array of uploaded CV file blobs, extracts their text content
+ * (supporting PDF and DOCX formats), batches them for efficient AI analysis, and uses a
+ * generative AI model to score and analyze each CV against the provided job description.
+ * The results are sorted by match score in descending order, and only the top N matches are returned.
  *
- * @param {PutBlobResult[]} cvFilesBlob - An array of Vercel Blob storage objects containing CV file metadata and URLs.
+ * If a file cannot be processed or analyzed, it will be included in the results with a score of 0
+ * and an error message in the analysis fields.
+ *
+ * @param {PutBlobResult[]} cvFilesBlob - An array of uploaded CV file blobs (from Vercel Blob storage).
  * @param {string} jobDescription - The job description text to match CVs against.
- * @param {number} topN - The number of top candidates to return (default: 5).
- * @returns {Promise<CVMatch[]>} A promise that resolves to an array of CV matches sorted by score in descending order.
+ * @param {number} [topN=5] - The number of top matches to return (default is 5).
+ * @returns {Promise<CVMatch[]>} A promise that resolves to an array of CVMatch objects, sorted by match score.
  */
 export async function findTopCVMatches(
   cvFilesBlob: PutBlobResult[],
@@ -121,63 +71,47 @@ export async function findTopCVMatches(
 ): Promise<CVMatch[]> {
   const ANALYSIS_ERROR = "Analysis Failed.";
 
-  const analysisPromises = cvFilesBlob.map(
-    async (cvFileBlob): Promise<CVMatch> => {
-      const fileName = cvFileBlob.pathname;
+  const cvTextPromises = cvFilesBlob.map(async (blob) => {
+    const response = await fetch(blob.url);
+    if (!response.ok) throw new Error(`Failed to fetch ${blob.pathname}`);
 
+    const buffer = Buffer.from(await response.arrayBuffer());
+    const mimeType = response.headers.get("Content-Type") || "";
+
+    let cvText = "";
+    if (mimeType.includes("wordprocessingml")) {
+      cvText = await convertDocxToText(buffer);
+    } else if (mimeType === "application/pdf") {
+      cvText = await convertPdfToText(buffer);
+    }
+    // You could add more types like 'text/plain' here if needed
+
+    return { fileName: blob.pathname, cvText };
+  });
+
+  const allCvTexts = await Promise.all(cvTextPromises);
+  const validCvTexts = allCvTexts.filter((cv) => cv.cvText);
+
+  const combinedCVMap = combineCVTextsForPrompt(validCvTexts, 8);
+
+  const batchAnalysisPromises = Object.entries(combinedCVMap).map(
+    async ([fileNamesKey, combinedCVText]) => {
       try {
-        const response = await fetch(cvFileBlob.url);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch file: ${response.statusText}`);
-        }
-
-        const mimeType =
-          response.headers.get("Content-Type") || "application/octet-stream";
-
-        const buffer = Buffer.from(await response.arrayBuffer());
-
-        let analysisResult: ATSResponse | null;
-
-        if (
-          mimeType ===
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        ) {
-          const cvText = await convertDocxToText(buffer);
-          analysisResult = await analyzeCvText(
-            cvText,
-            fileName,
-            jobDescription
-          );
-        } else if (mimeType === "application/pdf") {
-          const cvText = await convertPdfToText(buffer);
-          analysisResult = await analyzeCvText(
-            cvText,
-            fileName,
-            jobDescription
-          );
-        } else {
-          const fileToAnalyze = new File([buffer], fileName, {
-            type: mimeType,
-          });
-          analysisResult = await analyzeCV(fileToAnalyze, jobDescription);
-        }
-
-        if (analysisResult) {
-          return {
-            fileName: fileName,
-            matchScore: analysisResult.grade,
-            analysis: analysisResult.analysis,
-          };
-        } else {
-          throw new Error("Analysis did not return a valid result.");
-        }
-      } catch (error) {
-        console.error(
-          `Failed to process CV from URL ${cvFileBlob.url}:`,
-          error
+        const analysisResults = await analyzeCvBatch(
+          combinedCVText,
+          jobDescription
         );
-        return {
-          fileName: fileName,
+        if (analysisResults) {
+          return analysisResults;
+        }
+        throw new Error("Batch analysis returned null.");
+      } catch (error) {
+        console.error(`Failed to process CV batch: ${fileNamesKey}`, error);
+
+        const failedFiles = fileNamesKey.split(",");
+
+        return failedFiles.map((fileName) => ({
+          fileName,
           matchScore: 0,
           analysis: {
             "Hard Skills": { score: 0, reasoning: ANALYSIS_ERROR },
@@ -190,11 +124,14 @@ export async function findTopCVMatches(
             },
             Approximation: { score: 0, reasoning: ANALYSIS_ERROR },
           },
-        };
+        }));
       }
     }
   );
 
-  const allMatches = await Promise.all(analysisPromises);
+  const allMatchesNested = await Promise.all(batchAnalysisPromises);
+
+  const allMatches: CVMatch[] = allMatchesNested.flat();
+
   return allMatches.sort((a, b) => b.matchScore - a.matchScore).slice(0, topN);
 }

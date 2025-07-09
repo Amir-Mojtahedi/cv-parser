@@ -14,11 +14,6 @@ export interface CVAnalysis {
   Approximation: AnalysisDetail;
 }
 
-export interface ATSResponse {
-  grade: number;
-  analysis: CVAnalysis;
-}
-
 export interface CVMatch {
   fileName: string;
   matchScore: number;

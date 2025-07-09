@@ -78,4 +78,40 @@ async function convertDocxToText(docxBuffer: Buffer): Promise<string> {
   }
 }
 
-export { serializeFile, deserializeFile, getFileIcon, convertDocxToText };
+/**
+ * Splits an array of CV texts into groups of `batchSize`,
+ * each group combined into a single formatted string.
+ * Returns a map where the key is a comma-separated string of the file names in the batch,
+ * and the value is the concatenated CV text for that batch.
+ *
+ * @param {Array<{ fileName: string; cvText: string }>} cvFiles - Array of CVs with their filename and text.
+ * @param {number} batchSize - Number of cvs per group (default: 5).
+ * @returns {Record<string, string>} An object where each key is a comma-separated list of file names, and the value is the combined CV text.
+ */
+function combineCVTextsForPrompt(
+  cvFiles: { fileName: string; cvText: string }[],
+  batchSize: number = 5
+): Record<string, string> {
+  const batchMap: Record<string, string> = {};
+
+  for (let i = 0; i < cvFiles.length; i += batchSize) {
+    const batch = cvFiles.slice(i, i + batchSize);
+
+    const fileNamesKey = batch.map((cv) => cv.fileName).join(",");
+    const combinedText = batch
+      .map((cv) => `--- CV ${cv.fileName} ---\n${cv.cvText.trim()}`)
+      .join("\n\n");
+
+    batchMap[fileNamesKey] = combinedText;
+  }
+
+  return batchMap;
+}
+
+export {
+  serializeFile,
+  deserializeFile,
+  getFileIcon,
+  convertDocxToText,
+  combineCVTextsForPrompt,
+};
