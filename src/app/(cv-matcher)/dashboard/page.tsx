@@ -94,7 +94,7 @@ export default function CVMatcher() {
                       id="cv-upload"
                       type="file"
                       multiple
-                      accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                      accept=".pdf,.docx"
                       onChange={handleCVFileUpload}
                       className="hidden"
                     />
@@ -104,7 +104,7 @@ export default function CVMatcher() {
                         Click to upload CVs or drag and drop
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                        PDF, DOC, DOCX, PNG, JPG files supported
+                        PDF, DOCX files supported
                       </p>
                     </label>
                   </div>
@@ -175,7 +175,7 @@ export default function CVMatcher() {
                       <input
                         id="job-description-file"
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf,.docx"
                         onChange={(e) => handlejobDescriptionFileBlob(e)}
                         className="hidden"
                       />

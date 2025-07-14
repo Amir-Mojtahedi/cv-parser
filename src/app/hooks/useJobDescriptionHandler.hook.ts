@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import axios from "axios";
 import { upload } from "@vercel/blob/client";
 import { type PutBlobResult } from "@vercel/blob";
+import { convertFileToText } from "../lib/helpers/file/utils";
 
 const useJobDescriptionHandler = () => {
   const [jobDescription, setJobDescription] = useState("");
@@ -34,19 +34,11 @@ const useJobDescriptionHandler = () => {
         .pop()
         ?.toLowerCase();
       try {
-        if (extension === "pdf") {
-          const response = await axios.post(
-            "/api/job-description/extract",
-            {
-              fileUrl: uploadedJobDescriptionFile.url,
-            },
-            {
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }
+        if (extension === "pdf" || extension === "docx") {
+          const fileText = await convertFileToText(
+            uploadedJobDescriptionFile.url
           );
-          setExtractedJobDescription(response.data.text || "");
+          setExtractedJobDescription(fileText || "");
         } else {
           setExtractedJobDescription("");
         }

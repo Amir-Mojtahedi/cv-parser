@@ -1,5 +1,5 @@
-import mammoth from "mammoth";
 import { SerializableFile } from "@/app/types/types";
+import axios from "axios";
 
 /**
  * Converts a File object into a JSON-serializable object by Base64-encoding its content.
@@ -62,23 +62,6 @@ const getFileIcon = (fileName: string) => {
 };
 
 /**
- * Converts a DOCX file buffer to plain text using mammoth.
- * @param {Buffer} docxBuffer The DOCX buffer.
- * @returns {Promise<string>} The extracted plain text.
- */
-async function convertDocxToText(docxBuffer: Buffer): Promise<string> {
-  try {
-    const { value: text } = await mammoth.extractRawText({
-      buffer: docxBuffer,
-    });
-    return text.trim();
-  } catch (error) {
-    console.error("Error extracting text from DOCX:", error);
-    throw new Error("Failed to extract text.");
-  }
-}
-
-/**
  * Splits an array of CV texts into groups of `batchSize`,
  * each group combined into a single formatted string.
  * Returns a map where the key is a comma-separated string of the file names in the batch,
@@ -108,10 +91,49 @@ function combineCVTextsForPrompt(
   return batchMap;
 }
 
+/**
+ * Extracts text content from a file by sending its blob URL to an external file parsing service.
+ *
+ * This function supports extracting text from various file types (e.g., PDF, DOCX) by making a POST request
+ * to the file parser service endpoint defined in the environment variable `NEXT_PUBLIC_FILE_PARSER_URL`.
+ *
+ * @async
+ * @function convertFileToText
+ * @param {string} blobUrl - The public URL of the uploaded file (e.g., from Vercel Blob storage).
+ * @returns {Promise<string>} A promise that resolves to the extracted text content of the file, or an empty string if extraction fails.
+ * @throws {Error} Throws an error if the extraction service fails or returns an error response.
+ *
+ * @example
+ * const text = await convertFileToText("https://my-storage.vercel.app/file.pdf");
+ * console.log(text); // Extracted file text
+ */
+async function convertFileToText(blobUrl: string): Promise<string> {
+  try {
+    const { data } = await axios.post(
+      `${process.env.NEXT_PUBLIC_FILE_PARSER_URL}/extract`,
+      { fileUrl: blobUrl },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return data.text?.trim() || "";
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      const errorMsg = error.response?.data || error.message;
+      console.error(`Failed to extract file text: ${errorMsg}`);
+    } else {
+      console.error("Error calling FastAPI PDF extractor:", error);
+    }
+    throw new Error("PDF extraction service failed.");
+  }
+}
+
 export {
   serializeFile,
   deserializeFile,
   getFileIcon,
-  convertDocxToText,
   combineCVTextsForPrompt,
+  convertFileToText,
 };

@@ -5,11 +5,8 @@ import { atsBatchAnalysisSchema } from "@/app/lib/ai/atsSchema";
 import { createAtsPrompt } from "@/app/lib/ai/atsPrompt";
 import { CVMatch } from "@/app/types/types";
 import { PutBlobResult } from "@vercel/blob";
-import {
-  convertDocxToText,
-  combineCVTextsForPrompt,
-} from "@/app/lib/helpers/file/utils";
-import { convertPdfToText } from "@/app/lib/ai/utils";
+import { combineCVTextsForPrompt } from "@/app/lib/helpers/file/utils";
+import { convertFileToText } from "@/app/lib/helpers/file/utils";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
@@ -75,16 +72,7 @@ export async function findTopCVMatches(
     const response = await fetch(blob.url);
     if (!response.ok) throw new Error(`Failed to fetch ${blob.pathname}`);
 
-    const buffer = Buffer.from(await response.arrayBuffer());
-    const mimeType = response.headers.get("Content-Type") || "";
-
-    let cvText = "";
-    if (mimeType.includes("wordprocessingml")) {
-      cvText = await convertDocxToText(buffer);
-    } else if (mimeType === "application/pdf") {
-      cvText = await convertPdfToText(blob.url);
-    }
-    // You could add more types like 'text/plain' here if needed
+    const cvText = await convertFileToText(blob.url);
 
     return { fileName: blob.pathname, cvText };
   });

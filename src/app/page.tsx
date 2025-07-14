@@ -47,9 +47,11 @@ export default function LandingPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-              Learn More
-            </Button>
+            <Link href="/learn-more">
+              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+                Learn More
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -76,8 +78,8 @@ export default function LandingPage() {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-base">
-                Upload multiple CV files in various formats (PDF, DOC, DOCX,
-                TXT) or drag and drop them directly into the system.
+                Upload multiple CV files in various formats (PDF, DOCX ) or drag
+                and drop them directly into the system.
               </CardDescription>
             </CardContent>
           </Card>
@@ -136,8 +138,8 @@ export default function LandingPage() {
                   Lightning Fast Processing
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Process hundreds of CVs in seconds, not hours. Get instant
-                  results with our optimized matching algorithm.
+                  Process hundreds of CVs in seconds, not hours. Filter out the
+                  candidates our optimized matching algorithm.
                 </p>
               </div>
             </div>
@@ -166,8 +168,7 @@ export default function LandingPage() {
                   Multiple Formats
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Support for PDF, DOC, DOCX, TXT, and image formats. No need to
-                  convert files before uploading.
+                  Support for PDF and DOCX formats.
                 </p>
               </div>
             </div>
@@ -224,15 +225,16 @@ export default function LandingPage() {
       <div className="container mx-auto px-4 py-16">
         <div className="text-center max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
-            Ready to Transform Your Hiring Process?
+            Try the CV Matcher Proof of Concept
           </h2>
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-            Join thousands of recruiters who have streamlined their candidate
-            screening with our AI-powered CV matcher.
+            Experiment with our AI-powered CV matcher and see how it can help
+            you compare candidates to your job description. This is an early
+            proof of concept—feedback is welcome!
           </p>
           <Link href="/dashboard">
             <Button size="lg" className="text-lg px-12 py-6">
-              Start Matching CVs Now
+              Try CV Matching
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
