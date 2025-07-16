@@ -142,7 +142,7 @@ export default function LearnMorePage() {
                     AI Analysis
                   </h4>
                   <p className="text-gray-600 dark:text-gray-300 text-sm">
-                    Google&apos;s Gemini AI analyzes candidate qualifications
+                    Our own in house trained model analyzes candidate qualifications
                     against job requirements using sophisticated natural
                     language processing.
                   </p>
@@ -180,7 +180,7 @@ export default function LearnMorePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <Brain className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <span className="text-sm font-medium">Google Gemini AI</span>
+                  <span className="text-sm font-medium">Our own in house trained model</span>
                 </div>
                 <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <Cloud className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -480,7 +480,7 @@ export default function LearnMorePage() {
                 <div className="flex items-center space-x-3">
                   <Brain className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   <span className="text-sm font-medium">
-                    Google Gemini AI processes combined CV text
+                    Our own in house trained model processes combined CV text
                   </span>
                 </div>
                 <div className="flex items-center space-x-3">
