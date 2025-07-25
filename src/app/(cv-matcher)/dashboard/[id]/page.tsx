@@ -1,9 +1,8 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/radix-components/progress";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared";
+import { Button, Progress } from "@/shared";
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/radix-components/button";
 import Link from "next/link";
-import { getAnalysisFromCache } from "@/app/lib/redis/redisCacheService";
+import { getAnalysisFromCache } from "@/features/database/redis/redisService";
 import { notFound } from "next/navigation";
 
 export default async function DashboardPage(props: {

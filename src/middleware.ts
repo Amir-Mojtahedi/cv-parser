@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth/auth";
+import { auth } from "@/features/authentication/auth";
 import { NextResponse } from "next/server";
 
 export const config = {

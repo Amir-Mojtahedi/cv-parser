@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { LogOut, FileSearch } from "lucide-react";
-import { Button } from "@/components/ui/radix-components/button";
+import { Button } from "@/shared";
 import { signOut } from "next-auth/react";
 
 function SignOutDialog({

@@ -1,12 +1,9 @@
 "use client";
 
 import type React from "react";
-import useCVMatcherHandler from "@/app/hooks/useCVMatcherHandler.hook";
-import {
-  handleDragLeave,
-  handleDragOver,
-} from "@/app/lib/helpers/dashboard/utils";
-import { getFileIcon } from "@/app/lib/helpers/file/utils";
+import useCVMatcherHandler from "@/features/dashboard/hooks/useCVMatcherHandler.hook";
+import { handleDragLeave, handleDragOver } from "@/features/dashboard/utils";
+import { getFileIcon } from "@/shared/utils";
 import {
   Upload,
   FileText,
@@ -16,19 +13,19 @@ import {
   Download,
 } from "lucide-react";
 import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import Skeleton from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/radix-components/separator";
-import { Button } from "@/components/ui/radix-components/button";
-import { Label } from "@/components/ui/radix-components/label";
-import { Badge } from "@/components/ui/radix-components/badge";
+  Input,
+  Label,
+  Separator,
+  Skeleton,
+  Textarea,
+} from "@/shared";
 
 export default function CVMatcher() {
   const {
@@ -323,16 +320,24 @@ export default function CVMatcher() {
                       </div>
                       <div className="flex items-center gap-2">
                         {(() => {
-                          const isPdf = result.fileName.toLowerCase().endsWith('.pdf');
+                          const isPdf = result.fileName
+                            .toLowerCase()
+                            .endsWith(".pdf");
                           return (
                             <button
                               type="button"
-                              className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 ${!isPdf ? 'cursor-not-allowed' : ''}`}
+                              className={`p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 ${
+                                !isPdf ? "cursor-not-allowed" : ""
+                              }`}
                               title="Preview CV"
                               onClick={() => isPdf && handlePreviewCV(result)}
                               disabled={!isPdf}
                             >
-                              <Eye className={`h-5 w-5 ${isPdf ? 'text-blue-500' : 'text-gray-400'}`} />
+                              <Eye
+                                className={`h-5 w-5 ${
+                                  isPdf ? "text-blue-500" : "text-gray-400"
+                                }`}
+                              />
                             </button>
                           );
                         })()}

@@ -27,15 +27,15 @@ import {
   BarChart,
   Activity,
 } from "lucide-react";
-import { Button } from "@/components/ui/radix-components/button";
 import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/radix-components/badge";
+} from "@/shared";
 
 export default function LearnMorePage() {
   return (
