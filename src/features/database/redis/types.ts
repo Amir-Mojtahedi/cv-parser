@@ -7,4 +7,6 @@ export interface FormState {
   jobDescription?: string;
   topCount?: number;
   results?: Array<CVMatch & { cacheId: string }>;
+  isUploadMode?: boolean;
+  jobDescMode?: "write" | "upload";
 }

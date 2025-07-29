@@ -1,9 +1,30 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared";
-import { Button, Progress } from "@/shared";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Progress,
+} from "@/shared";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { getAnalysisFromCache } from "@/features/database/redis/redisService";
+import InterviewQuestionsLoader from "@/features/dashboard/components/interview-questions-loader";
+import {
+  getAnalysisFromCache,
+  getFormStateFromCache,
+  getJobDescMode,
+} from "@/features/database/redis/redisService";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+
+// Mapping between interface keys and UI-friendly names
+const categoryDisplayNames: Record<string, string> = {
+  experience: "Experience",
+  hardSkills: "Hard Skills",
+  education: "Education",
+  softSkills: "Soft Skills",
+  experienceDiversity: "Diversity in Experience",
+  approximation: "Location",
+};
 
 export default async function DashboardPage(props: {
   params: Promise<{ id: string }>;
@@ -15,6 +36,14 @@ export default async function DashboardPage(props: {
   if (!analysis) {
     notFound();
   }
+
+  const formState = await getFormStateFromCache();
+  const jobDescMode = await getJobDescMode();
+
+  const jobDescription =
+    jobDescMode === "upload"
+      ? formState?.extractedJobDescription
+      : formState?.jobDescription;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -55,7 +84,9 @@ export default async function DashboardPage(props: {
             {Object.entries(analysis.analysis).map(([category, data]) => (
               <Card key={category}>
                 <CardHeader>
-                  <CardTitle className="text-lg">{category}</CardTitle>
+                  <CardTitle className="text-lg">
+                    {categoryDisplayNames[category] || category}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-4">
@@ -73,6 +104,19 @@ export default async function DashboardPage(props: {
               </Card>
             ))}
           </div>
+
+          {jobDescription ? (
+            <InterviewQuestionsLoader
+              jobDescription={jobDescription}
+              cvAnalysis={analysis}
+              analysisId={id}
+            />
+          ) : (
+            <div className="p-4 bg-red-100 text-red-700 rounded">
+              Failed to load job description. Unable to generate interview
+              questions.
+            </div>
+          )}
         </div>
       </div>
     </div>

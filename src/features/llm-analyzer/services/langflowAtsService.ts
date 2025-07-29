@@ -1,11 +1,8 @@
-'use server';
+"use server";
 
 import { LangflowClient } from "@datastax/langflow-client";
 import { PutBlobResult } from "@vercel/blob";
-import {
-  combineCVTextsForPrompt,
-  convertFileToText,
-} from "@/shared/utils";
+import { combineCVTextsForPrompt, convertFileToText } from "@/shared/utils";
 import { CVMatch } from "@/shared/types";
 
 const ANALYSIS_ERROR = "Analysis Failed.";
@@ -43,12 +40,15 @@ function generateFallbackResult(fileName: string): CVMatch {
     fileName,
     matchScore: 0,
     analysis: {
-      "Hard Skills": { score: 0, reasoning: ANALYSIS_ERROR },
-      Education: { score: 0, reasoning: ANALYSIS_ERROR },
-      Experience: { score: 0, reasoning: ANALYSIS_ERROR },
-      "Soft Skills": { score: 0, reasoning: ANALYSIS_ERROR },
-      "Diversity in experience": { score: 0, reasoning: ANALYSIS_ERROR },
-      Approximation: { score: 0, reasoning: ANALYSIS_ERROR },
+      experience: { score: 0, reasoning: ANALYSIS_ERROR },
+      hardSkills: { score: 0, reasoning: ANALYSIS_ERROR },
+      education: { score: 0, reasoning: ANALYSIS_ERROR },
+      softSkills: { score: 0, reasoning: ANALYSIS_ERROR },
+      experienceDiversity: {
+        score: 0,
+        reasoning: ANALYSIS_ERROR,
+      },
+      approximation: { score: 0, reasoning: ANALYSIS_ERROR },
     },
   };
 }
@@ -63,9 +63,11 @@ function tryParseJSON<T>(input: string): T | null {
 }
 
 function stripMarkdownCodeFence(output: string): string {
-  return output.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  return output
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
 }
-
 
 export async function analyzeCVsWithLangflow(
   cvFilesBlob: PutBlobResult[],
@@ -102,10 +104,12 @@ export async function analyzeCVsWithLangflow(
       try {
         const prompt = `Job description:\n${jobDescription}\n\nCVs:\n ${combinedText} `;
         const flow = langflowClient.flow(flowId);
-        const result = await flow.run(prompt)
+        const result = await flow.run(prompt);
         const output = result.chatOutputText()?.trim();
         const parsed = output
-          ? tryParseJSON<{ cvAnalyses: CVMatch[] }>(stripMarkdownCodeFence(output))
+          ? tryParseJSON<{ cvAnalyses: CVMatch[] }>(
+              stripMarkdownCodeFence(output)
+            )
           : null;
 
         if (parsed?.cvAnalyses) return parsed.cvAnalyses;

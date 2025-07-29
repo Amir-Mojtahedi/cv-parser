@@ -1,13 +1,21 @@
-export interface AnalysisDetail {
+interface AnalysisDetail {
   score: number;
   reasoning: string;
 }
 
 export interface CVAnalysis {
-  Experience: AnalysisDetail;
-  "Hard Skills": AnalysisDetail;
-  Education: AnalysisDetail;
-  "Soft Skills": AnalysisDetail;
-  "Diversity in experience": AnalysisDetail;
-  Approximation: AnalysisDetail;
+  experience: AnalysisDetail;
+  hardSkills: AnalysisDetail;
+  education: AnalysisDetail;
+  softSkills: AnalysisDetail;
+  experienceDiversity: AnalysisDetail;
+  approximation: AnalysisDetail;
+}
+
+export interface InterviewQuestionsData {
+  hardSkillsQuestions: string[];
+  softSkillsQuestions: string[];
+  communicationQuestions: string[];
+  technicalDeepDiveQuestions: string[];
+  interviewTips: string[];
 }

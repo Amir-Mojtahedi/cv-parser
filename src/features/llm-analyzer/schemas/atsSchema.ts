@@ -16,7 +16,7 @@ const singleCvAnalysisSchema = {
     analysis: {
       type: Type.OBJECT,
       properties: {
-        Experience: {
+        experience: {
           type: Type.OBJECT,
           properties: {
             score: {
@@ -31,7 +31,7 @@ const singleCvAnalysisSchema = {
           required: ["score", "reasoning"],
           propertyOrdering: ["score", "reasoning"],
         },
-        "Hard Skills": {
+        hardSkills: {
           type: Type.OBJECT,
           properties: {
             score: {
@@ -46,7 +46,7 @@ const singleCvAnalysisSchema = {
           required: ["score", "reasoning"],
           propertyOrdering: ["score", "reasoning"],
         },
-        Education: {
+        education: {
           type: Type.OBJECT,
           properties: {
             score: {
@@ -61,7 +61,7 @@ const singleCvAnalysisSchema = {
           required: ["score", "reasoning"],
           propertyOrdering: ["score", "reasoning"],
         },
-        "Soft Skills": {
+        softSkills: {
           type: Type.OBJECT,
           properties: {
             score: {
@@ -76,7 +76,7 @@ const singleCvAnalysisSchema = {
           required: ["score", "reasoning"],
           propertyOrdering: ["score", "reasoning"],
         },
-        "Diversity in experience": {
+        experienceDiversity: {
           type: Type.OBJECT,
           properties: {
             score: {
@@ -92,7 +92,7 @@ const singleCvAnalysisSchema = {
           required: ["score", "reasoning"],
           propertyOrdering: ["score", "reasoning"],
         },
-        Approximation: {
+        approximation: {
           type: Type.OBJECT,
           properties: {
             score: {
@@ -110,25 +110,25 @@ const singleCvAnalysisSchema = {
         },
       },
       required: [
-        "Experience",
-        "Hard Skills",
-        "Education",
-        "Soft Skills",
-        "Diversity in experience",
-        "Approximation",
+        "experience",
+        "hardSkills",
+        "education",
+        "softSkills",
+        "experienceDiversity",
+        "approximation",
       ],
       propertyOrdering: [
-        "Experience",
-        "Hard Skills",
-        "Education",
-        "Soft Skills",
-        "Diversity in experience",
-        "Approximation",
+        "experience",
+        "hardSkills",
+        "education",
+        "softSkills",
+        "experienceDiversity",
+        "approximation",
       ],
     },
   },
-  required: ['fileName', 'matchScore', 'analysis'],
-  propertyOrdering: ['fileName', 'matchScore', 'analysis'],
+  required: ["fileName", "matchScore", "analysis"],
+  propertyOrdering: ["fileName", "matchScore", "analysis"],
 };
 
 // This is the NEW top-level schema for the BATCH response

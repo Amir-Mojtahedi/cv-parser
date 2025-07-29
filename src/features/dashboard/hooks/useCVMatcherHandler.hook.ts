@@ -9,12 +9,13 @@ import {
   cacheAnalysis,
   clearFormStateCache,
 } from "@/features/database/redis/redisService";
-// import { findTopCVMatches } from "@/features/llm-analyzer/atsService";
-import { analyzeCVsWithLangflow } from "../../llm-analyzer/langflowAtsService";
+import { findTopCVMatches } from "@/features/llm-analyzer/services/atsService";
+// import { analyzeCVsWithLangflow } from "@/features/llm-analyzer/atsService";
 import {
   loadCVFormState,
   saveCVFormState,
   getCVFileFromCache,
+  saveJobDescMode,
 } from "@/features/dashboard/utils";
 
 const useCVMatcherHandler = () => {
@@ -42,7 +43,7 @@ const useCVMatcherHandler = () => {
   const [topCount, setTopCount] = useState(5);
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<ResultWithId[]>([]);
-  const [jobDescMode, setJobDescMode] = useState<"write" | "upload">("write");
+  const [jobDescMode, setJobDescMode] = useState<"write" | "upload">("upload");
 
   useEffect(() => {
     loadCVFormState({
@@ -52,6 +53,7 @@ const useCVMatcherHandler = () => {
       setJD: setJobDescription,
       setTopCount,
       setResults,
+      setJobDescMode,
     });
   }, []);
 
@@ -64,6 +66,7 @@ const useCVMatcherHandler = () => {
         jobDescription,
         topCount,
         results,
+        jobDescMode,
       });
     }, 500);
 
@@ -75,6 +78,7 @@ const useCVMatcherHandler = () => {
     jobDescription,
     topCount,
     results,
+    jobDescMode,
   ]);
 
   const handleModeChange = (mode: "write" | "upload") => {
@@ -142,7 +146,10 @@ const useCVMatcherHandler = () => {
     try {
       const finalJobDescription =
         jobDescMode === "upload" ? extractedJobDescription : jobDescription;
-      const matches = await analyzeCVsWithLangflow(
+
+      await saveJobDescMode(jobDescMode);
+
+      const matches = await findTopCVMatches(
         cvFilesBlob,
         finalJobDescription,
         topCount

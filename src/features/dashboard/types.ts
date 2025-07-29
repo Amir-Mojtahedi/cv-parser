@@ -7,4 +7,5 @@ export type LoadCVFormStateSetters = {
   setJD: (jd: string) => void;
   setTopCount: (count: number) => void;
   setResults: (results: any[]) => void;
+  setJobDescMode: (mode: "write" | "upload") => void;
 };

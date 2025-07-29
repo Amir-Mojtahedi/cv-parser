@@ -3,6 +3,7 @@ import { LoadCVFormStateSetters } from "@/features/dashboard/types";
 import { ResultWithId } from "@/shared/types";
 import {
   cacheFormState,
+  cacheJobDescMode,
   getFormStateFromCache,
 } from "@/features/database/redis/redisService";
 
@@ -38,6 +39,9 @@ async function loadCVFormState(setters: LoadCVFormStateSetters) {
   if (savedState.results) {
     setters.setResults(savedState.results);
   }
+  if (savedState.jobDescMode) {
+    setters.setJobDescMode(savedState.jobDescMode);
+  }
 }
 
 /**
@@ -50,6 +54,7 @@ async function loadCVFormState(setters: LoadCVFormStateSetters) {
  * @param {string} refs.jobDescription - The manually entered job description.
  * @param {number} refs.topCount - The number of top matches to find.
  * @param {ResultWithId[]} refs.results - The analysis results.
+ * @param {"write" | "upload"} [refs.jobDescMode] - The mode used for analysis (set only once).
  */
 async function saveCVFormState(refs: {
   cvFilesBlob: PutBlobResult[];
@@ -58,6 +63,7 @@ async function saveCVFormState(refs: {
   jobDescription: string;
   topCount: number;
   results: ResultWithId[];
+  jobDescMode: "write" | "upload";
 }) {
   const serializedCVFilesBlob = JSON.stringify(refs.cvFilesBlob);
   const serializedJobDescriptionFileBlob = JSON.stringify(
@@ -70,7 +76,12 @@ async function saveCVFormState(refs: {
     jobDescription: refs.jobDescription,
     topCount: refs.topCount,
     results: refs.results,
+    jobDescMode: refs.jobDescMode,
   });
+}
+
+async function saveJobDescMode(jobDescMode: "write" | "upload") {
+  await cacheJobDescMode(jobDescMode);
 }
 
 /**
@@ -134,6 +145,7 @@ const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
 export {
   loadCVFormState,
   saveCVFormState,
+  saveJobDescMode,
   getCVFileFromCache,
   handleDragLeave,
   handleDragOver,

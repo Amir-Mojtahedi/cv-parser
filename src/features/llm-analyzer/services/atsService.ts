@@ -1,48 +1,9 @@
 "use server";
 
-import { GoogleGenAI } from "@google/genai";
-import { atsBatchAnalysisSchema } from "@/features/llm-analyzer/atsSchema";
-import { createAtsPrompt } from "@/features/llm-analyzer/atsPrompt";
+import { analyzeCvBatch } from "@/features/llm-analyzer/utils";
 import { CVMatch } from "@/shared/types";
 import { PutBlobResult } from "@vercel/blob";
 import { combineCVTextsForPrompt, convertFileToText } from "@/shared/utils";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
-
-/**
- * Analyzes a BATCH of CV texts against a job description.
- * @param {string} combinedCvText - A single string containing multiple CVs separated by markers.
- * @param {string} jobDescription - The job description text to match against.
- * @returns {Promise<CVMatch[] | null>} A promise that resolves to an array of analysis results.
- */
-async function analyzeCvBatch(
-  combinedCvText: string,
-  jobDescription: string
-): Promise<CVMatch[] | null> {
-  try {
-    const atsPrompt = createAtsPrompt(jobDescription);
-    const fullPrompt = `${atsPrompt}\n\n---CV CONTENT---\n\n${combinedCvText}`;
-
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ text: fullPrompt }],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: atsBatchAnalysisSchema,
-      },
-    });
-
-    const responseText = response.text?.trim();
-    if (responseText) {
-      const parsedResponse = JSON.parse(responseText);
-      return parsedResponse.cvAnalyses || [];
-    }
-    return null;
-  } catch (error) {
-    console.error(`Error analyzing CV text batch:`, error);
-    return null;
-  }
-}
 
 /**
  * Finds and returns the top N CV matches for a given job description.
@@ -101,15 +62,15 @@ export async function findTopCVMatches(
           fileName,
           matchScore: 0,
           analysis: {
-            "Hard Skills": { score: 0, reasoning: ANALYSIS_ERROR },
-            Education: { score: 0, reasoning: ANALYSIS_ERROR },
-            Experience: { score: 0, reasoning: ANALYSIS_ERROR },
-            "Soft Skills": { score: 0, reasoning: ANALYSIS_ERROR },
-            "Diversity in experience": {
+            experience: { score: 0, reasoning: ANALYSIS_ERROR },
+            hardSkills: { score: 0, reasoning: ANALYSIS_ERROR },
+            education: { score: 0, reasoning: ANALYSIS_ERROR },
+            softSkills: { score: 0, reasoning: ANALYSIS_ERROR },
+            experienceDiversity: {
               score: 0,
               reasoning: ANALYSIS_ERROR,
             },
-            Approximation: { score: 0, reasoning: ANALYSIS_ERROR },
+            approximation: { score: 0, reasoning: ANALYSIS_ERROR },
           },
         }));
       }
