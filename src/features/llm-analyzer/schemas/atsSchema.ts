@@ -131,16 +131,8 @@ const singleCvAnalysisSchema = {
   propertyOrdering: ["fileName", "matchScore", "analysis"],
 };
 
-// This is the NEW top-level schema for the BATCH response
 export const atsBatchAnalysisSchema = {
-  type: Type.OBJECT,
-  properties: {
-    cvAnalyses: {
-      type: Type.ARRAY,
-      description:
-        "An array of analysis results, one for each CV provided in the prompt.",
-      items: singleCvAnalysisSchema, // Each item in the array must follow the single CV schema
-    },
-  },
-  required: ["cvAnalyses"],
+  type: Type.ARRAY,
+  description: "An array of analysis results, one for each CV provided.",
+  items: singleCvAnalysisSchema,
 };

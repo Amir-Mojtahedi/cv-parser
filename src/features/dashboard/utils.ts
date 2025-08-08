@@ -5,7 +5,7 @@ import {
   cacheFormState,
   cacheJobDescMode,
   getFormStateFromCache,
-} from "@/features/database/redis/redisService";
+} from "@/features/database/redis";
 
 /**
  * Loads the form state from the cache and updates the UI using the provided setters.

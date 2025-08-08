@@ -8,7 +8,7 @@ import { ResultWithId } from "@/shared/types";
 import {
   cacheAnalysis,
   clearFormStateCache,
-} from "@/features/database/redis/redisService";
+} from "@/features/database/redis";
 import { findTopCVMatches } from "@/features/llm-analyzer/services/atsService";
 // import { analyzeCVsWithLangflow } from "@/features/llm-analyzer/atsService";
 import {

@@ -6,7 +6,7 @@ import { InterviewQuestionsData } from "@/features/llm-analyzer/types";
 import { 
   getInterviewQuestionsFromCache, 
   cacheInterviewQuestions 
-} from "@/features/database/redis/redisService";
+} from "@/features/database/redis";
 
 /**
  * Server action to generate or retrieve interview questions based on job description and CV analysis.

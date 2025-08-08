@@ -1,6 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
-import { requireUserId } from "@/features/authentication/utils";
+import { getCurrentUserEmail } from "@/features/authentication/authService";
 
 export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
@@ -11,7 +11,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       request,
       onBeforeGenerateToken: async (pathname) => {
         console.log(`The destination path for the blob jd upload: ${pathname}`);
-        const userId = await requireUserId();
+        const userId = await getCurrentUserEmail();
 
         if (!userId) {
           throw new Error("Not authenticated");

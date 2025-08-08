@@ -1,40 +1,36 @@
 import NextAuth from "next-auth";
-import { authConfig } from "@/features/authentication/auth.config";
-import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
-import { getUserByEmail } from "@/features/database/supabase/supabaseService";
-import { ZodError } from "zod";
-import { signInSchema } from "@/features/authentication/zod";
+import { SupabaseAdapter } from "@auth/supabase-adapter";
+import { authConfig } from "./auth.config";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
-  providers: [
-    Credentials({
-      authorize: async (credentials) => {
-        try {
-          const { email, password } = await signInSchema.parseAsync(
-            credentials
-          );
+  
+  adapter: SupabaseAdapter({
+    url: process.env.SUPABASE_URL!,
+    secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  }),
 
-          const user = await getUserByEmail(email);
-          if (!user) return null;
+  session: { strategy: "jwt" },
 
-          // const passwordsMatch = await bcrypt.compare(password, user.password);
-          const passwordsMatch = password === user.password;
+  callbacks: {
+    ...authConfig.callbacks,
+    
+    async jwt({ token, user }) {
+      if (user) {
+        token.user = user;
+      }
+      return token;
+    },
 
-          if (passwordsMatch) return user;
-
-          return null;
-        } catch (error) {
-          if (error instanceof ZodError) {
-            return null;
-          }
-        }
-      },
-    }),
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
+    async session({ session, token }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          ...(token.user as any),
+        },
+        accessToken: token.accessToken,
+      };
+    },
+  },
 });

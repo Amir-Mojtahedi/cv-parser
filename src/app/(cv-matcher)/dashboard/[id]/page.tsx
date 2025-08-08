@@ -12,7 +12,7 @@ import {
   getAnalysisFromCache,
   getFormStateFromCache,
   getJobDescMode,
-} from "@/features/database/redis/redisService";
+} from "@/features/database/redis";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 

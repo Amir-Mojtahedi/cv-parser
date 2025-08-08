@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { login } from "@/features/authentication/utils";
+import { login } from "@/features/authentication/authService";
 import { useRouter } from "next/navigation";
 import { LoginFormData } from "@/features/authentication/types";
 
@@ -14,7 +14,7 @@ export default function useLogin() {
   });
 
   const handleGoogleLogin = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
+    signIn("google", { redirectTo: "/dashboard" });
   };
 
   const handleCreateAccount = () => {

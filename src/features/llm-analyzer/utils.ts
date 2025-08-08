@@ -1,20 +1,111 @@
 import { GoogleGenAI } from "@google/genai";
+import { gmailBotResponseSchema } from "@/features/llm-analyzer/schemas/gmailBotSchema";
 import { atsBatchAnalysisSchema } from "@/features/llm-analyzer/schemas/atsSchema";
-import { createAtsPrompt } from "@/features/llm-analyzer/prompts/atsPrompt";
 import { interviewQuestionsSchema } from "@/features/llm-analyzer/schemas/interviewQuestionsSchema";
+import { createGmailBotResponsePrompt } from "@/features/llm-analyzer/prompts/gmailBotPrompt";
+import { createAtsPrompt } from "@/features/llm-analyzer/prompts/atsPrompt";
 import { createInterviewQuestionsPrompt } from "@/features/llm-analyzer/prompts/interviewQuestionsPrompt";
-import { InterviewQuestionsData } from "@/features/llm-analyzer/types";
+import {
+  InterviewQuestionsData,
+  GmailBotResponse,
+} from "@/features/llm-analyzer/types";
+import { EmailInfo } from "@/features/gmail/types";
 import { CVMatch } from "@/shared/types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Analyzes a BATCH of CV texts against a job description.
- * @param {string} combinedCvText - A single string containing multiple CVs separated by markers.
- * @param {string} jobDescription - The job description text to match against.
- * @returns {Promise<CVMatch[] | null>} A promise that resolves to an array of analysis results.
+ * Analyzes input content using the Gemini LLM and validates it against a given Zod schema.
+ *
+ * @param prompt - The input string to be sent to Gemini for analysis.
+ * @param schema - A Zod schema used to validate and parse the response.
+ * @returns A parsed JSON object conforming to the schema, or `null` if parsing or generation fails.
  */
-async function analyzeCvBatch(
+async function analyzeWithGemini(prompt: string, schema: any): Promise<any> {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ text: prompt }],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: schema,
+      },
+    });
+
+    const responseText = response.text?.trim();
+
+    if (!responseText) {
+      throw new Error("Gemini returned empty response text.");
+    }
+
+    return JSON.parse(responseText);
+  } catch (error) {
+    const errMsg =
+      error instanceof Error ? error.message : "Unknown Gemini analysis error";
+    console.error("Gemini Analysis Failed:", errMsg);
+    return null;
+  }
+}
+
+/**
+ * Generates an AI-powered reply to an email using Gemini and a custom Gmail response prompt.
+ *
+ * @param email - The email object containing subject, sender, and body.
+ * @returns A structured AI response object. Falls back to default error message if generation fails.
+ */
+export async function generateGamilBotResponse(
+  email: EmailInfo
+): Promise<GmailBotResponse> {
+  try {
+    const prompt = createGmailBotResponsePrompt(
+      email.subject,
+      email.from,
+      email.body
+    );
+
+    const geminiResponse = await analyzeWithGemini(prompt, gmailBotResponseSchema);
+
+    if (!geminiResponse) {
+      throw new Error("Gemini failed to generate a valid email response.");
+    }
+
+    return {
+      messageId: email.id,
+      threadId: email.threadId,
+      subject: email.subject,
+      from: email.from,
+      ...geminiResponse,
+    };
+  } catch (error) {
+    const errMsg =
+      error instanceof Error ? error.message : "Unknown AI response error";
+
+    console.error("generateGamilAIResponse Error:", errMsg);
+
+    return {
+      messageId: email.id,
+      threadId: email.threadId,
+      subject: email.subject,
+      from: email.from,
+      shouldRespond: false,
+      responseType: "requires_human",
+      priority: "medium",
+      responseBody: "⚠️ AI response failed!",
+      responseReasoning: "Gemini generation failed or was invalid.",
+      followUpRequired: true,
+      error: errMsg,
+    };
+  }
+}
+
+/**
+ * Analyzes multiple CVs against a given job description using Gemini and an ATS prompt.
+ *
+ * @param combinedCvText - Combined raw text of multiple CVs, separated by delimiters.
+ * @param jobDescription - The job description text to compare CVs against.
+ * @returns A list of matching CV analysis results, or `null` if generation fails.
+ */
+export async function analyzeCvBatch(
   combinedCvText: string,
   jobDescription: string
 ): Promise<CVMatch[] | null> {
@@ -22,59 +113,56 @@ async function analyzeCvBatch(
     const atsPrompt = createAtsPrompt(jobDescription);
     const fullPrompt = `${atsPrompt}\n\n---CV CONTENT---\n\n${combinedCvText}`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ text: fullPrompt }],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: atsBatchAnalysisSchema,
-      },
-    });
+    const geminiResponse = await analyzeWithGemini(
+      fullPrompt,
+      atsBatchAnalysisSchema
+    );
 
-    const responseText = response.text?.trim();
-    if (responseText) {
-      const parsedResponse = JSON.parse(responseText);
-      return parsedResponse.cvAnalyses || [];
+    if (!geminiResponse) {
+      throw new Error("No ATS match results returned.");
     }
-    return null;
+
+    return geminiResponse;
   } catch (error) {
-    console.error(`Error analyzing CV text batch:`, error);
+    const errMsg =
+      error instanceof Error ? error.message : "Unknown CV analysis error";
+
+    console.error("analyzeCvBatch Error:", errMsg);
     return null;
   }
 }
 
 /**
- * Generates interview questions based on job description and CV analysis.
- * @param {string} jobDescription - The job description text.
- * @param {CVMatch} cvAnalysis - The CV analysis results.
- * @returns {Promise<InterviewQuestionsData | null>} A promise that resolves to interview questions or null if failed.
+ * Generates interview questions based on a job description and a single CV match analysis.
+ *
+ * @param jobDescription - The job description text.
+ * @param cvAnalysis - A single analyzed CV matched against the job.
+ * @returns A structured set of interview questions or `null` if generation fails.
  */
-async function generateInterviewQuestions(
+export async function generateInterviewQuestions(
   jobDescription: string,
-  cvAnalysis: CVMatch,
+  cvAnalysis: CVMatch
 ): Promise<InterviewQuestionsData | null> {
   try {
     const prompt = createInterviewQuestionsPrompt(jobDescription, cvAnalysis);
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ text: prompt }],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: interviewQuestionsSchema,
-      },
-    });
+    const geminiResponse = await analyzeWithGemini(
+      prompt,
+      interviewQuestionsSchema
+    );
 
-    const responseText = response.text?.trim();
-    if (responseText) {
-      const parsedResponse = JSON.parse(responseText) as InterviewQuestionsData;
-      return parsedResponse;
+    if (!geminiResponse) {
+      throw new Error("Interview question generation failed.");
     }
-    return null;
+
+    return geminiResponse;
   } catch (error) {
-    console.error(`Error generating interview questions:`, error);
+    const errMsg =
+      error instanceof Error
+        ? error.message
+        : "Unknown error generating interview questions";
+
+    console.error("generateInterviewQuestions Error:", errMsg);
     return null;
   }
 }
-
-export { analyzeCvBatch, generateInterviewQuestions };

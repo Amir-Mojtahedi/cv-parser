@@ -1,7 +1,6 @@
 "use server";
 
-import { auth } from "@/features/authentication/auth";
-import { signIn } from "@/features/authentication/auth";
+import { signIn, auth } from "@/features/authentication/auth";
 import { createUser } from "@/features/database/supabase/supabaseService";
 import { ZodError } from "zod";
 import { signInSchema, signupSchema } from "@/features/authentication/zod";
@@ -71,23 +70,10 @@ export async function getCurrentUser() {
   return session?.user;
 }
 
-export async function getCurrentUserId(): Promise<string | null> {
+export async function getCurrentUserEmail(): Promise<string> {
   const user = await getCurrentUser();
-  return user?.email || null;
-}
-
-export async function requireAuth() {
-  const user = await getCurrentUser();
-  if (!user) {
+  if (!user || !user.email) {
     throw new Error("Authentication required");
   }
-  return user;
-}
-
-export async function requireUserId(): Promise<string> {
-  const userId = await getCurrentUserId();
-  if (!userId) {
-    throw new Error("Authentication required");
-  }
-  return userId;
+  return user.email;
 }

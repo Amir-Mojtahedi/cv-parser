@@ -1,11 +1,9 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { signup } from "@/features/authentication/utils";
+import { signup } from "@/features/authentication/authService";
 import { signupSchema } from "@/features/authentication/zod";
 import { useRouter } from "next/navigation";
 import { SignupFormData } from "@/features/authentication/types";
-
-
 
 export default function useSignup() {
   const router = useRouter();
@@ -89,11 +87,11 @@ export default function useSignup() {
   ];
 
   const handleGoogleSignup = () => {
-    signIn("google", { callbackUrl: "/dashboard" });
+    signIn("google", { redirectTo: "/dashboard" });
   };
 
   const handleBackToLogin = () => {
-    router.replace("/login")
+    router.replace("/login");
   };
 
   return {

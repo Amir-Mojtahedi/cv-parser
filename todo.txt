@@ -1,12 +1,13 @@
 ## TODO: Authentication & User Management
 
 ### High Priority (Critical Issues)
-1. **Enable Google OAuth** - Implement Google authentication as an alternative login method
-2. **Password security** - Hash passwords using a library that works in an edge environment (e.g., bcryptjs or similar)
+1. **Provide Context for gmailBot** - Allow users to upload the company information so that the Gmail bot can answer question regarding the company
+2. **Make sure to start the python server when users first open the page to prevent long cold starts
+3. **Password security** - Hash passwords using a library that works in an edge environment (e.g., bcryptjs or similar)
 
 ### Medium Priority (Core Features)
-3. **CV parser support** - Ensure CV parser accepts multiple formats: PDF, DOCX, JPEG, JPG, and PNG
-4. **Personalized matching** - Enable personalized weights for clients based on specific job requirements
+4. **CV parser support** - Ensure CV parser accepts multiple formats: JPEG, JPG, and PNG
+5. **Personalized matching** - Enable personalized weights for clients based on specific job requirements
 
 ### Low Priority (Code Quality)
-5. **Code refactoring** - Improve code structure, remove duplication, and enhance maintainability
+6. **Code refactoring** - Improve code structure, remove duplication, and enhance maintainability
