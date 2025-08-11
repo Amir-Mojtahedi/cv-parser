@@ -26,7 +26,9 @@ export const authConfig = {
         if (!credentials) return null;
 
         try {
-          const { email, password } = await signInSchema.parseAsync(credentials);
+          const { email, password } = await signInSchema.parseAsync(
+            credentials
+          );
           const user = await getUserByEmail(email);
 
           if (!user || !user.password) return null;
@@ -60,16 +62,39 @@ export const authConfig = {
     }),
   ],
   callbacks: {
+    async jwt({ token, account }) {
+      if (account?.provider === "google") {
+        token.hasGoogleAuth = true;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      session.user.hasGoogleAuth = Boolean(token.hasGoogleAuth);
+      return session;
+    },
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
+      const hasGoogleAuth = auth?.user?.hasGoogleAuth;
       const isDashboardPage = nextUrl.pathname.startsWith("/dashboard");
+      const isGmailPage = nextUrl.pathname.startsWith("/gmail");
       const isLoginPage = nextUrl.pathname === "/login";
       const isSignupPage = nextUrl.pathname === "/signup";
+
+      if (isGmailPage) {
+        if (isLoggedIn && hasGoogleAuth) {
+          return true;
+        }
+        const callbackUrl = encodeURIComponent(
+          nextUrl.pathname + nextUrl.search
+        );
+        return Response.redirect(
+          new URL(`/google-login?callbackUrl=${callbackUrl}`, nextUrl)
+        );
+      }
 
       if (isDashboardPage && !isLoggedIn) {
         return false;
       }
-
       if ((isLoginPage || isSignupPage) && isLoggedIn) {
         return Response.redirect(new URL("/dashboard", nextUrl));
       }

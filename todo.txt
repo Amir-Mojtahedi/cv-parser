@@ -1,7 +1,6 @@
 ## TODO: Authentication & User Management
 
 ### High Priority (Critical Issues)
-1. **Provide Context for gmailBot** - Allow users to upload the company information so that the Gmail bot can answer question regarding the company
 2. **Make sure to start the python server when users first open the page to prevent long cold starts
 3. **Password security** - Hash passwords using a library that works in an edge environment (e.g., bcryptjs or similar)
 

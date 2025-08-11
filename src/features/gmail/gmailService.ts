@@ -65,7 +65,7 @@ export async function sendEmailReply(
   threadId: string,
   to: string,
   subject: string,
-  body: string
+  bodyHtml: string
 ): Promise<boolean> {
   try {
     const auth = await getGoogleAuthClient();
@@ -74,9 +74,10 @@ export async function sendEmailReply(
     const rawMessage = [
       `To: ${to}`,
       `Subject: ${subject}`,
-      "Content-Type: text/plain; charset=UTF-8",
+      "Content-Type: text/html; charset=UTF-8",
+      "MIME-Version: 1.0",
       "",
-      body,
+      bodyHtml,
     ].join("\n");
 
     const encodedMessage = Buffer.from(rawMessage)

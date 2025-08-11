@@ -6,8 +6,8 @@ declare module "next-auth" {
     id: string;
     email: string;
     name?: string;
-    role?: string;
     password?: string;
+    hasGoogleAuth?: boolean;
   }
 
   interface Session {
@@ -20,5 +20,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     user: User;
     accessToken?: string;
+    hasGoogleAuth?: boolean;
   }
 }

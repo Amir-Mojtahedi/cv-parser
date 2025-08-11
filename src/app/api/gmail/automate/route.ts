@@ -5,10 +5,10 @@ import { getGmailBotResponses } from "@/features/database/redis";
 export async function GET() {
   try {
     const responses = await getGmailBotResponses();
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       history: responses,
-      count: responses.length
+      count: responses.length,
     });
   } catch (error) {
     console.error("Error fetching automation data:", error);
@@ -19,9 +19,19 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const results = await processNewEmails();
+    const body = await request.json();
+    const { companyContext } = body;
+
+    if (!companyContext || typeof companyContext !== "string") {
+      return NextResponse.json(
+        { success: false, error: "Missing or invalid companyContext" },
+        { status: 400 }
+      );
+    }
+
+    const results = await processNewEmails(companyContext);
 
     return NextResponse.json({
       success: true,

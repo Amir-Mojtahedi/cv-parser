@@ -54,13 +54,15 @@ async function analyzeWithGemini(prompt: string, schema: any): Promise<any> {
  * @returns A structured AI response object. Falls back to default error message if generation fails.
  */
 export async function generateGamilBotResponse(
-  email: EmailInfo
+  email: EmailInfo,
+  companyContext: string
 ): Promise<GmailBotResponse> {
   try {
     const prompt = createGmailBotResponsePrompt(
       email.subject,
       email.from,
-      email.body
+      email.body,
+      companyContext
     );
 
     const geminiResponse = await analyzeWithGemini(prompt, gmailBotResponseSchema);

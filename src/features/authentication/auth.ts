@@ -15,9 +15,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      // Call the original jwt callback first
+      const result = await authConfig.callbacks.jwt!({ token, user, account });
+      
+      // Then add your custom logic
       if (user) {
-        token.user = user;
+        result.user = user;
       }
       return token;
     },
