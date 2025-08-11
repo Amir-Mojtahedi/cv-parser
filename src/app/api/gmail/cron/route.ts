@@ -3,6 +3,8 @@ import { processNewEmails } from "@/features/llm-analyzer/services/gmailBotServi
 
 export async function POST(request: Request) {
   try {
+    const body = await request.json();
+    const companyContext = body.companyContext;
     // Verify the request is from an authorized source (optional security)
     const authHeader = request.headers.get('authorization');
     const expectedToken = process.env.CRON_SECRET_TOKEN;
@@ -14,7 +16,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const results = await processNewEmails();
+    const results = await processNewEmails(companyContext);
     
     return NextResponse.json({ 
       success: true, 
