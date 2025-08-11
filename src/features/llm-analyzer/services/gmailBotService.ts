@@ -23,7 +23,10 @@ import {
  *
  * @throws {Error} - If the main processing fails, the error is logged and rethrown for upper-level handling.
  */
-export async function processNewEmails(companyContext: string): Promise<GmailBotResponse[]> {
+
+export async function processNewEmails(
+  companyContext: string
+): Promise<GmailBotResponse[]> {
   try {
     const newEmails = await checkForNewEmails();
 
@@ -35,14 +38,22 @@ export async function processNewEmails(companyContext: string): Promise<GmailBot
     const gmailBotResponses = await Promise.all(
       newEmails.map(async (email): Promise<GmailBotResponse> => {
         try {
-          const gmailBotResponse = await generateGamilBotResponse(email, companyContext);
+          const gmailBotResponse = await generateGamilBotResponse(
+            email,
+            companyContext
+          );
 
           if (gmailBotResponse.shouldRespond && gmailBotResponse.responseBody) {
             const sent = await sendEmailReply(
               email.threadId,
               email.from,
               email.subject,
-              gmailBotResponse.responseBody
+              gmailBotResponse.responseBody,
+              {
+                date: email.date || new Date().toLocaleString(), // Use email's date
+                from: email.from,
+                body: email.body || "Original message content", // Use full body or snippet
+              }
             );
 
             if (sent) {

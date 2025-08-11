@@ -8,7 +8,6 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       history: responses,
-      count: responses.length,
     });
   } catch (error) {
     console.error("Error fetching automation data:", error);

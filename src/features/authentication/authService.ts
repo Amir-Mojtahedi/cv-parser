@@ -1,7 +1,7 @@
 "use server";
 
 import { signIn, auth } from "@/features/authentication/auth";
-import { createUser } from "@/features/database/supabase/supabaseService";
+import { createUser } from "@/features/database/supabase/userSupabaseService";
 import { ZodError } from "zod";
 import { signInSchema, signupSchema } from "@/features/authentication/zod";
 

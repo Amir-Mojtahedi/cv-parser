@@ -65,20 +65,90 @@ export async function sendEmailReply(
   threadId: string,
   to: string,
   subject: string,
-  bodyHtml: string
+  bodyHtml: string,
+  originalEmail?: {
+    date: string;
+    from: string;
+    body: string;
+  }
 ): Promise<boolean> {
   try {
     const auth = await getGoogleAuthClient();
     const gmail = google.gmail({ version: "v1", auth });
 
-    const rawMessage = [
+    // Create the full email body with threading
+    let fullBodyHtml = bodyHtml;
+
+    if (originalEmail) {
+      // Clean up the original body (remove any existing HTML quotes to avoid nesting)
+      const cleanOriginalBody = originalEmail.body
+        .replace(/<div class="gmail_quote">[\s\S]*?<\/div>/g, "")
+        .replace(/<blockquote class="gmail_quote"[\s\S]*?<\/blockquote>/g, "")
+        .trim();
+
+      // Add the quoted original message below the new response
+      fullBodyHtml += `
+        <br><br>
+        <div class="gmail_quote">
+          <div dir="ltr" class="gmail_attr">
+            On ${originalEmail.date}, &lt;${originalEmail.from}&gt; wrote:<br>
+          </div>
+          <blockquote class="gmail_quote" style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204);padding-left:1ex">
+            ${cleanOriginalBody}
+          </blockquote>
+        </div>
+      `;
+    }
+
+    // Ensure subject has "Re:" prefix if it's a reply and doesn't already have it
+    const replySubject = subject.toLowerCase().startsWith("re:")
+      ? subject
+      : `Re: ${subject}`;
+
+    // Get the thread messages to find the original Message-ID for proper threading
+    let messageId = "";
+    try {
+      const thread = await gmail.users.threads.get({
+        userId: "me",
+        id: threadId,
+        format: "metadata",
+        metadataHeaders: ["Message-ID"],
+      });
+
+      // Get the first message in the thread (the original message)
+      const firstMessage = thread.data.messages?.[0];
+      if (firstMessage?.payload?.headers) {
+        const messageIdHeader = firstMessage.payload.headers.find(
+          (header) => header.name?.toLowerCase() === "message-id"
+        );
+
+        if (messageIdHeader?.value) {
+          messageId = messageIdHeader.value;
+        }
+      }
+    } catch (metadataError) {
+      console.warn(
+        "Could not retrieve original message ID for threading:",
+        metadataError
+      );
+      // Continue without proper Message-ID threading
+    }
+
+    // Build email headers
+    const headers = [
       `To: ${to}`,
-      `Subject: ${subject}`,
+      `Subject: ${replySubject}`,
       "Content-Type: text/html; charset=UTF-8",
       "MIME-Version: 1.0",
-      "",
-      bodyHtml,
-    ].join("\n");
+    ];
+
+    // Add threading headers if we have a message ID
+    if (messageId) {
+      headers.push(`In-Reply-To: ${messageId}`);
+      headers.push(`References: ${messageId}`);
+    }
+
+    const rawMessage = [...headers, "", fullBodyHtml].join("\n");
 
     const encodedMessage = Buffer.from(rawMessage)
       .toString("base64")
@@ -90,10 +160,13 @@ export async function sendEmailReply(
       userId: "me",
       requestBody: {
         raw: encodedMessage,
-        threadId,
+        threadId, // This ensures it stays in the same thread
       },
     });
 
+    console.log(
+      `✅ Email reply sent successfully to ${to} in thread ${threadId}`
+    );
     return true;
   } catch (err) {
     console.error("❌ Error in sendEmailReply():", err);
@@ -115,6 +188,7 @@ export async function markEmailAsRead(messageId: string): Promise<void> {
         removeLabelIds: ["UNREAD"],
       },
     });
+    console.log(`✅ Marked email ${messageId} as read`);
   } catch (error) {
     console.error("Error marking email as read:", error);
   }

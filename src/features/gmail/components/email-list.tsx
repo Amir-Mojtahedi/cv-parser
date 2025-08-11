@@ -16,42 +16,29 @@ export function EmailList({ messages, isLoading = false }: EmailListProps) {
   const formatDetailedDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-
-      // Convert to UTC and format
-      const utcDate = new Date(
-        date.getTime() + date.getTimezoneOffset() * 60000
-      );
-
       const now = new Date();
       const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
       if (diffInHours < 24) {
-        // Today: show time
-        return utcDate.toLocaleString("en-US", {
+        // Today: show time in user's local timezone
+        return date.toLocaleString("en-US", {
           hour: "2-digit",
           minute: "2-digit",
-          timeZone: "UTC",
-          timeZoneName: "short",
         });
       } else if (diffInHours < 168) {
-        // 7 days
-        // This week: show day and time
-        return utcDate.toLocaleString("en-US", {
+        // This week: show day and time in user's local timezone
+        return date.toLocaleString("en-US", {
           weekday: "short",
           hour: "2-digit",
           minute: "2-digit",
-          timeZone: "UTC",
-          timeZoneName: "short",
         });
       } else {
-        // Older: show date and time
-        return utcDate.toLocaleString("en-US", {
+        // Older: show date and time in user's local timezone
+        return date.toLocaleString("en-US", {
           month: "short",
           day: "numeric",
           hour: "2-digit",
           minute: "2-digit",
-          timeZone: "UTC",
-          timeZoneName: "short",
         });
       }
     } catch (error) {
@@ -60,16 +47,12 @@ export function EmailList({ messages, isLoading = false }: EmailListProps) {
     }
   };
 
-  const formatUTCDate = (dateString: string) => {
+  const formatFullDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
 
-      // Convert to UTC and format consistently
-      const utcDate = new Date(
-        date.getTime() + date.getTimezoneOffset() * 60000
-      );
-
-      return utcDate.toLocaleString("en-US", {
+      // Display in user's local timezone (same as Gmail)
+      return date.toLocaleString("en-US", {
         weekday: "short",
         year: "numeric",
         month: "short",
@@ -77,8 +60,6 @@ export function EmailList({ messages, isLoading = false }: EmailListProps) {
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
-        timeZone: "UTC",
-        timeZoneName: "short",
       });
     } catch (error) {
       console.error("Invalid date format:", dateString, error);
@@ -305,7 +286,7 @@ export function EmailList({ messages, isLoading = false }: EmailListProps) {
                             </span>
                             <p className="text-gray-600 dark:text-gray-400">
                               {message.date
-                                ? formatUTCDate(message.date)
+                                ? formatFullDate(message.date)
                                 : "Unknown"}
                             </p>
                           </div>

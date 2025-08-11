@@ -8,7 +8,6 @@ import {
   Bot,
   History,
   Inbox,
-  Upload,
 } from "lucide-react";
 import { EmailList } from "@/features/gmail/components/email-list";
 import { AutomationPanel } from "@/features/gmail/components/automation-panel";
@@ -84,7 +83,7 @@ export default function GmailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <AutomationPanel isVisible={true} />
+              <AutomationPanel />
             </CardContent>
           </Card>
         );
@@ -99,7 +98,7 @@ export default function GmailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <AutomationPanel isVisible={true} showHistory={true} />
+              <AutomationPanel showHistory={true} />
             </CardContent>
           </Card>
         );

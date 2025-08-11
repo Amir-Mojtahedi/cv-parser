@@ -3,7 +3,7 @@ import { getCurrentUser } from "@/features/authentication/authService";
 import {
   getAccountByUserId,
   supabase,
-} from "@/features/database/supabase/supabaseService";
+} from "@/features/database/supabase/userSupabaseService";
 import { EmailInfo } from "@/features/gmail/types";
 
 /**

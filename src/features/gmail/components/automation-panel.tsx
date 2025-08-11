@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  Bot,
   Upload,
   Play,
   History,
@@ -10,6 +9,7 @@ import {
   MessageSquare,
   AlertTriangle,
   CheckCircle,
+  FileText,
 } from "lucide-react";
 import {
   Button,
@@ -17,66 +17,34 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
   Badge,
   Separator,
+  Textarea,
+  Label,
 } from "@/shared";
 import { GmailBotResponse } from "@/features/llm-analyzer/types";
+import { useCompanyContextHandler } from "@/features/gmail/hooks/useCompanyContextHandler.hook";
 
 interface AutomationPanelProps {
-  isVisible: boolean;
   showHistory?: boolean;
 }
 
-export function AutomationPanel({
-  isVisible,
-  showHistory = false,
-}: AutomationPanelProps) {
-  const [companyContext, setCompanyContext] = useState<string>("");
+export function AutomationPanel({ showHistory = false }: AutomationPanelProps) {
+  const {
+    contextText,
+    setContextText,
+    contextFileBlob,
+    isUploading,
+    handleContextFileUpload,
+    resetContext,
+  } = useCompanyContextHandler();
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<GmailBotResponse[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (showHistory) {
-      fetchCachedResponses();
-    }
-  }, [showHistory]);
-
-  const processEmails = async () => {
-    if (!companyContext.trim()) {
-      alert("Please provide company context first.");
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      const response = await fetch("/api/gmail/automate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ companyContext }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to process emails");
-      }
-
-      const data = await response.json();
-      setResults(data.results || []);
-
-      // Refresh history if we're in history view
-      if (showHistory) {
-        fetchCachedResponses();
-      }
-    } catch (error) {
-      console.error("Error processing emails:", error);
-      alert("Failed to process emails. Please try again.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
+  // ... (fetchCachedResponses and processEmails logic remains the same)
   const fetchCachedResponses = async () => {
     setIsLoading(true);
     try {
@@ -92,6 +60,43 @@ export function AutomationPanel({
     }
   };
 
+  useEffect(() => {
+    if (showHistory) {
+      fetchCachedResponses();
+    }
+  }, [showHistory]);
+
+  const processEmails = async () => {
+    if (!contextText.trim()) {
+      alert("Please provide company context first.");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const response = await fetch("/api/gmail/automate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ companyContext: contextText }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to process emails");
+      }
+
+      const data = await response.json();
+      setResults(data.results || []);
+    } catch (error) {
+      console.error("Error processing emails:", error);
+      alert("Failed to process emails. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // ... (getPriorityColor, getResponseTypeColor, and renderResponseCard logic remains the same)
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
       case "high":
@@ -179,8 +184,6 @@ export function AutomationPanel({
     </div>
   );
 
-  if (!isVisible) return null;
-
   return (
     <div className="space-y-6">
       {!showHistory && (
@@ -190,72 +193,97 @@ export function AutomationPanel({
               <Upload className="h-5 w-5" />
               Company Context
             </CardTitle>
+            <CardDescription>
+              Upload or type in context for the email automation bot.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <Label htmlFor="company-context-upload">
                 Upload Company Context File
-              </label>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+              </Label>
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
                 <input
                   type="file"
                   accept=".pdf,.txt,.doc,.docx"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (e) => {
-                        setCompanyContext(e.target?.result as string);
-                      };
-                      reader.readAsText(file);
-                    }
-                  }}
+                  onChange={handleContextFileUpload}
                   className="hidden"
                   id="company-context-upload"
+                  disabled={isUploading}
                 />
-                <label
+                <Label
                   htmlFor="company-context-upload"
-                  className="cursor-pointer"
+                  className={`cursor-pointer ${
+                    isUploading ? "opacity-50" : ""
+                  }`}
                 >
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  {isUploading ? (
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  ) : (
+                    <FileText className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  )}
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Click to upload company context or drag and drop
+                    {isUploading
+                      ? "Uploading & Processing..."
+                      : "Click to upload context or drag and drop"}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
                     PDF, TXT, DOC, DOCX files supported
                   </p>
-                </label>
+                </Label>
               </div>
+              {contextFileBlob && (
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                    <span className="text-sm truncate">
+                      {contextFileBlob.pathname.replace(
+                        /-[\w\d]{20,}(?=\.\w+$)/,
+                        ""
+                      )}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={resetContext}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Manual Input Option */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <Label htmlFor="company-context-manual">
                 Or type company context manually
-              </label>
-              <textarea
-                value={companyContext}
-                onChange={(e) => setCompanyContext(e.target.value)}
+              </Label>
+              <Textarea
+                id="company-context-manual"
+                value={contextText}
+                onChange={(e) => setContextText(e.target.value)}
                 placeholder="Enter company context, mission, values, or any relevant information..."
-                className="w-full h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full h-32 p-3 resize-none"
+                disabled={isUploading}
               />
             </div>
 
-            {/* Process Button */}
             <Button
               onClick={processEmails}
-              disabled={!companyContext.trim() || isProcessing}
+              disabled={!contextText.trim() || isProcessing || isUploading}
               className="w-full"
             >
-              {isProcessing ? (
+              {isProcessing || isUploading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Processing Emails...
+                  <span>
+                    {isProcessing ? "Processing Emails..." : "Uploading..."}
+                  </span>
                 </>
               ) : (
                 <>
                   <Play className="h-4 w-4 mr-2" />
-                  Process Emails
+                  <span>Process Emails</span>
                 </>
               )}
             </Button>
@@ -263,7 +291,6 @@ export function AutomationPanel({
         </Card>
       )}
 
-      {/* Results Section */}
       {results.length > 0 && (
         <Card>
           <CardHeader>
@@ -297,37 +324,6 @@ export function AutomationPanel({
                 )}
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Empty State */}
-      {!showHistory && results.length === 0 && companyContext && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              Ready to Process Emails
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Company context is loaded. Click "Process Emails" to start
-              automation.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* History Empty State */}
-      {showHistory && results.length === 0 && !isLoading && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No Automation History
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              No automated email responses have been generated yet.
-            </p>
           </CardContent>
         </Card>
       )}

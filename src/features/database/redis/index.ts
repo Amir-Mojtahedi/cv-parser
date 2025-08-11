@@ -8,24 +8,24 @@ export {
   getJobDescMode,
   clearFormStateCache,
   clearATSCache,
-} from "./atsCacheService";
+} from "./atsRedisService";
 
 export {
   cacheInterviewQuestions,
   getInterviewQuestionsFromCache,
   clearInterviewQuestionsCache,
-} from "./inerviewQuestionsCacheService";
+} from "./inerviewQuestionsRedisService";
 
 export {
   cacheGmailBotResponses,
   getGmailBotResponses,
   clearGmailBotResponses,
-} from "./gmailBotCacheService";
+} from "./gmailBotRedisService";
 
 // General cache clearing function that coordinates across all services
-import { clearATSCache } from "./atsCacheService";
-import { clearInterviewQuestionsCache } from "./inerviewQuestionsCacheService";
-import { clearGmailBotResponses } from "./gmailBotCacheService";
+import { clearATSCache } from "./atsRedisService";
+import { clearInterviewQuestionsCache } from "./inerviewQuestionsRedisService";
+import { clearGmailBotResponses } from "./gmailBotRedisService";
 
 /**
  * Clears all cached data (form state, analysis results, and email automation) for the current user.

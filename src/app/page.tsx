@@ -17,10 +17,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared";
+import { ServiceWakeup } from "@/shared/components/serviceWakeup"; // Adjust path as needed
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <ServiceWakeup />
+
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center max-w-4xl mx-auto">
