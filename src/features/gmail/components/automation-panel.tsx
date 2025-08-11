@@ -1,181 +1,181 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCompanyContextHandler } from "@/features/gmail/hooks/useCompanyContextHandler.hook";
 import {
   Bot,
+  Upload,
   Play,
+  History,
   Clock,
+  MessageSquare,
+  AlertTriangle,
   CheckCircle,
-  AlertCircle,
-  Mail,
-  RefreshCw,
 } from "lucide-react";
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
   CardTitle,
   Badge,
-  Button,
+  Separator,
 } from "@/shared";
 import { GmailBotResponse } from "@/features/llm-analyzer/types";
 
 interface AutomationPanelProps {
   isVisible: boolean;
+  showHistory?: boolean;
 }
 
-export function AutomationPanel({ isVisible }: AutomationPanelProps) {
+export function AutomationPanel({
+  isVisible,
+  showHistory = false,
+}: AutomationPanelProps) {
+  const [companyContext, setCompanyContext] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<GmailBotResponse[]>([]);
-  const [cachedResponses, setCachedResponses] = useState<GmailBotResponse[]>(
-    []
-  );
-  const [showHistory, setShowHistory] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { contextText, isUploading, handleContextFileUpload } =
-    useCompanyContextHandler();
+  useEffect(() => {
+    if (showHistory) {
+      fetchCachedResponses();
+    }
+  }, [showHistory]);
 
   const processEmails = async () => {
-    try {
-      setIsProcessing(true);
-      setError(null);
+    if (!companyContext.trim()) {
+      alert("Please provide company context first.");
+      return;
+    }
 
+    setIsProcessing(true);
+    try {
       const response = await fetch("/api/gmail/automate", {
         method: "POST",
-        body: JSON.stringify({ companyContext: contextText }),
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ companyContext }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        setResults(data.results || []);
-        // Refresh cached responses after processing
-        fetchCachedResponses();
-      } else {
-        setError(data.error || "Failed to process emails");
+      if (!response.ok) {
+        throw new Error("Failed to process emails");
       }
-    } catch (err) {
-      console.error("Error processing emails:", err);
-      setError("Failed to process emails");
+
+      const data = await response.json();
+      setResults(data.results || []);
+
+      // Refresh history if we're in history view
+      if (showHistory) {
+        fetchCachedResponses();
+      }
+    } catch (error) {
+      console.error("Error processing emails:", error);
+      alert("Failed to process emails. Please try again.");
     } finally {
       setIsProcessing(false);
     }
   };
 
   const fetchCachedResponses = async () => {
+    setIsLoading(true);
     try {
       const response = await fetch("/api/gmail/automate");
-      const data = await response.json();
-
-      if (data.success) {
-        setCachedResponses(data.history || []);
+      if (response.ok) {
+        const data = await response.json();
+        setResults(data.history || []);
       }
-    } catch (err) {
-      console.error("Error fetching cached responses:", err);
+    } catch (error) {
+      console.error("Error fetching history:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (isVisible) {
-      fetchCachedResponses();
-    }
-  }, [isVisible]);
-
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+    switch (priority.toLowerCase()) {
       case "high":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
       case "medium":
         return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
       case "low":
         return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
   };
 
   const getResponseTypeColor = (type: string) => {
-    switch (type) {
-      case "general_inquiry":
+    switch (type.toLowerCase()) {
+      case "reply":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "job_application":
+      case "forward":
         return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
-      case "support_request":
-        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200";
-      case "spam":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
-      case "requires_human":
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-      case "acknowledgment":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      case "ignore":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
       default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
     }
   };
 
   const renderResponseCard = (result: GmailBotResponse, index: number) => (
-    <div
-      key={index}
-      className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg"
-    >
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center space-x-2">
-          <Mail className="h-4 w-4 text-gray-500" />
-          <span className="font-medium text-sm">{result.subject}</span>
+    <div key={index} className="space-y-4">
+      {index > 0 && <Separator />}
+      <div className="space-y-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h4 className="font-semibold text-gray-900 dark:text-white">
+                {result.subject}
+              </h4>
+              <Badge
+                variant="secondary"
+                className={getPriorityColor(result.priority)}
+              >
+                {result.priority}
+              </Badge>
+              <Badge
+                variant="secondary"
+                className={getResponseTypeColor(result.responseType)}
+              >
+                {result.responseType}
+              </Badge>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              From: {result.from}
+            </p>
+            {result.sentAt && (
+              <p className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {new Date(result.sentAt).toLocaleString()}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {result.shouldRespond ? (
+              <CheckCircle className="h-5 w-5 text-green-500" />
+            ) : (
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+            )}
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Badge className={`text-xs ${getPriorityColor(result.priority)}`}>
-            {result.priority}
-          </Badge>
-          <Badge
-            className={`text-xs ${getResponseTypeColor(result.responseType)}`}
-          >
-            {result.responseType}
-          </Badge>
+
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+            <strong>Reasoning:</strong> {result.responseReasoning}
+          </p>
+          {result.responseBody && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                <strong>Response:</strong>
+              </p>
+              <div className="bg-white dark:bg-gray-700 rounded p-2 text-sm">
+                {result.responseBody}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-        <span className="font-medium">From:</span> {result.from}
-      </div>
-
-      <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-        <span className="font-medium">Reasoning:</span>{" "}
-        {result.responseReasoning}
-      </div>
-
-      {result.shouldRespond && result.responseBody && (
-        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
-          <div className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-            AI Response:
-          </div>
-          <div className="text-sm text-blue-800 dark:text-blue-200">
-            {result.responseBody}
-          </div>
-        </div>
-      )}
-
-      {result.error && (
-        <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-          <div className="text-sm font-medium text-red-900 dark:text-red-100 mb-1">
-            Error:
-          </div>
-          <div className="text-sm text-red-800 dark:text-red-200">
-            {result.error}
-          </div>
-        </div>
-      )}
-
-      {result.sentAt && (
-        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          Sent: {new Date(result.sentAt).toLocaleString()}
-        </div>
-      )}
     </div>
   );
 
@@ -183,154 +183,151 @@ export function AutomationPanel({ isVisible }: AutomationPanelProps) {
 
   return (
     <div className="space-y-6">
-      {/* Company Context Upload */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Bot className="h-5 w-5 text-purple-600" />
-            <span>Company Context</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <input
-              type="file"
-              accept=".pdf,.docx"
-              onChange={handleContextFileUpload}
-              className="block w-full text-sm text-gray-500
-          file:mr-4 file:py-2 file:px-4
-          file:rounded-full file:border-0
-          file:text-sm file:font-semibold
-          file:bg-purple-50 file:text-purple-700
-          hover:file:bg-purple-100"
-            />
-            {isUploading && (
-              <p className="text-sm text-gray-500">Uploading & extracting...</p>
-            )}
-            {contextText && (
-              <div className="p-2 border rounded bg-gray-50 dark:bg-gray-800 max-h-40 overflow-auto text-xs">
-                <strong>Extracted Context:</strong>
-                <p className="mt-1 whitespace-pre-wrap">{contextText}</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      {/* Automation Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Bot className="h-5 w-5 text-blue-600" />
-            <span>Email Automation</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={processEmails}
-              disabled={isProcessing}
-              className="flex items-center space-x-2"
-            >
-              {isProcessing ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
-              <span>
-                {isProcessing ? "Processing..." : "Process New Emails"}
-              </span>
-            </Button>
-
-            <Button
-              onClick={() => {
-                setShowHistory(!showHistory);
-                if (!showHistory) {
-                  fetchCachedResponses();
-                }
-              }}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <Clock className="h-4 w-4" />
-              <span>{showHistory ? "Hide" : "Show"} History</span>
-            </Button>
-
-            <Button
-              onClick={fetchCachedResponses}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span>Refresh</span>
-            </Button>
-          </div>
-
-          {error && (
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-              <div className="flex items-center space-x-2">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-red-700 dark:text-red-300">{error}</span>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Recent Results */}
-      {results.length > 0 && (
+      {!showHistory && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <span>Recent Processing Results</span>
-              <Badge variant="secondary">{results.length}</Badge>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Company Context
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {results.map((result, index) =>
-                renderResponseCard(result, index)
-              )}
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Upload Company Context File
+              </label>
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                <input
+                  type="file"
+                  accept=".pdf,.txt,.doc,.docx"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        setCompanyContext(e.target?.result as string);
+                      };
+                      reader.readAsText(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="company-context-upload"
+                />
+                <label
+                  htmlFor="company-context-upload"
+                  className="cursor-pointer"
+                >
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Click to upload company context or drag and drop
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                    PDF, TXT, DOC, DOCX files supported
+                  </p>
+                </label>
+              </div>
             </div>
+
+            {/* Manual Input Option */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Or type company context manually
+              </label>
+              <textarea
+                value={companyContext}
+                onChange={(e) => setCompanyContext(e.target.value)}
+                placeholder="Enter company context, mission, values, or any relevant information..."
+                className="w-full h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+
+            {/* Process Button */}
+            <Button
+              onClick={processEmails}
+              disabled={!companyContext.trim() || isProcessing}
+              className="w-full"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Processing Emails...
+                </>
+              ) : (
+                <>
+                  <Play className="h-4 w-4 mr-2" />
+                  Process Emails
+                </>
+              )}
+            </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Cached History */}
-      {showHistory && cachedResponses.length > 0 && (
+      {/* Results Section */}
+      {results.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-gray-600" />
-              <span>Cached Email Responses</span>
-              <Badge variant="secondary">{cachedResponses.length}</Badge>
+            <CardTitle className="flex items-center gap-2">
+              {showHistory ? (
+                <>
+                  <History className="h-5 w-5" />
+                  <span>Automation History</span>
+                </>
+              ) : (
+                <>
+                  <MessageSquare className="h-5 w-5" />
+                  <span>Processing Results</span>
+                </>
+              )}
+              <Badge variant="secondary">{results.length} emails</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {cachedResponses.map((result, index) =>
-                renderResponseCard(result, index)
-              )}
-            </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-gray-600 dark:text-gray-400">
+                  Loading...
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {results.map((result, index) =>
+                  renderResponseCard(result, index)
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
 
       {/* Empty State */}
-      {showHistory && cachedResponses.length === 0 && (
+      {!showHistory && results.length === 0 && companyContext && (
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-gray-600" />
-              <span>Cached Email Responses</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No cached email responses found.</p>
-              <p className="text-sm">Process some emails to see them here.</p>
-            </div>
+          <CardContent className="p-8 text-center">
+            <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              Ready to Process Emails
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Company context is loaded. Click "Process Emails" to start
+              automation.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* History Empty State */}
+      {showHistory && results.length === 0 && !isLoading && (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              No Automation History
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              No automated email responses have been generated yet.
+            </p>
           </CardContent>
         </Card>
       )}
