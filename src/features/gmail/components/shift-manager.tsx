@@ -79,12 +79,16 @@ export function ShiftManager() {
       email: "amirrezamojtahedi2@gmail.com",
     },
     {
-      name: "Mohammad Javad Mojtahedi",
-      email: "m.j.modjtahedi@gmail.com",
+      name: "Hao Zheng",
+      email: "zhenghao22@gmail.com",
     },
     {
-      name: "Sogand Zendehdel Moghaddam",
-      email: "sogand.moghaddam1342@gmail.com",
+      name: "Peter Jun Ma",
+      email: "peterjunma@gmail.com",
+    },
+    {
+      name: "Maher Chaouachi",
+      email: "mhrchaouachi@gmail.com",
     },
   ];
 
