@@ -1,10 +1,14 @@
+"use server";
+
 import { google } from "googleapis";
 import { getCurrentUser } from "@/features/authentication/authService";
 import {
   getAccountByUserId,
   supabase,
 } from "@/features/database/supabase/userSupabaseService";
-import { EmailInfo } from "@/features/gmail/types";
+import { EmailInfo, Shift } from "@/features/gmail/types";
+import { isShiftOpen } from "@/features/database/supabase/shiftSupabaseService";
+import { assignShiftToWorker } from "../llm-analyzer/services/shiftManagerBotService";
 
 /**
  * Refreshes the Google OAuth tokens using the account's refresh token
@@ -158,4 +162,80 @@ async function fetchEmailById(
   }
 }
 
-export { getGoogleAuthClient, fetchEmailById };
+interface EmailReply {
+  id: string;
+  threadId: string;
+  from: string;
+  fromName: string;
+  fromEmail: string;
+  subject: string;
+  body: string;
+  date: Date;
+  internalDate: string;
+}
+
+async function manageShift(shift: Shift): Promise<Shift> {
+  const auth = await getGoogleAuthClient();
+  const gmail = google.gmail({ version: "v1", auth });
+
+  try {
+    if (shift.gmailMessageId) {
+      const isOpen = await isShiftOpen(shift.gmailMessageId);
+      if (!isOpen) {
+        return shift;
+      }
+    }
+
+    const threadResponse = await gmail.users.threads.get({
+      userId: "me",
+      id: shift.gmailThreadId!,
+    });
+
+    const messages = threadResponse.data.messages || [];
+    const replyMessages = messages.slice(1);
+
+    if (replyMessages.length === 0) {
+      return shift;
+    }
+
+    const detailedReplies = await Promise.all(
+      replyMessages.map((message) => fetchEmailById(gmail, message.id!))
+    );
+
+    const emailReplies: EmailReply[] = detailedReplies.map(
+      (replyInfo, index) => {
+        const fromHeader = replyInfo.from;
+        const fromMatch =
+          fromHeader.match(/^(.+?)\s*<(.+?)>$/) || fromHeader.match(/^(.+)$/);
+        const fromName =
+          fromMatch?.[1]?.trim().replace(/^["']|["']$/g, "") || "";
+        const fromEmail = fromMatch?.[2]?.trim() || fromHeader.trim();
+
+        const internalDate = replyMessages[index].internalDate!;
+
+        return {
+          id: replyInfo.id,
+          threadId: replyInfo.threadId,
+          from: fromHeader,
+          fromName,
+          fromEmail,
+          subject: replyInfo.subject,
+          body: replyInfo.body.trim(),
+          date: new Date(parseInt(internalDate)),
+          internalDate,
+        };
+      }
+    );
+
+    emailReplies.sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    shift = (await assignShiftToWorker(emailReplies, shift)) ?? shift;
+
+    return shift;
+  } catch (error) {
+    console.error("Error assigning shift to worker:", error);
+    throw new Error(`Failed to assign shift: ${(error as Error).message}`);
+  }
+}
+
+export { getGoogleAuthClient, fetchEmailById, manageShift };

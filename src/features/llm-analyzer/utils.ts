@@ -8,9 +8,12 @@ import { createInterviewQuestionsPrompt } from "@/features/llm-analyzer/prompts/
 import {
   InterviewQuestionsData,
   GmailBotResponse,
+  ShiftManagerBotResponse,
 } from "@/features/llm-analyzer/types";
-import { EmailInfo } from "@/features/gmail/types";
+import { EmailInfo, Shift } from "@/features/gmail/types";
 import { CVMatch } from "@/shared/types";
+import { createShiftManagerBotPrompt } from "@/features/llm-analyzer/prompts/shiftManagerBotPrompt";
+import { shiftManagerBotSchema } from "@/features/llm-analyzer/schemas/shiftManagerBotSchema";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
@@ -166,5 +169,42 @@ export async function generateInterviewQuestions(
 
     console.error("generateInterviewQuestions Error:", errMsg);
     return null;
+  }
+}
+
+/**
+ * Analyzes an employee's email response to determine if they want to accept a shift.
+ *
+ * @param shift - The shift details being offered
+ * @param emailBody - The content of the employee's email response
+ * @param subject - The subject of the email
+ * @param from - The sender's email address
+ * @returns A ShiftManagerBotResponse indicating whether the employee wants the shift
+ */
+export async function analyzeShiftAcceptance(
+  shift: Shift,
+  emailBody: string,
+  subject: string,
+  from: string
+): Promise<ShiftManagerBotResponse> {
+  try {
+    const prompt = createShiftManagerBotPrompt(shift, emailBody, subject, from);
+
+    const geminiResponse = await analyzeWithGemini(prompt, shiftManagerBotSchema);
+
+    if (!geminiResponse) {
+      throw new Error("Gemini failed to generate a valid shift acceptance analysis.");
+    }
+
+    return geminiResponse;
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : "Unknown shift analysis error";
+    console.error("analyzeShiftAcceptance Error:", errMsg);
+    
+    // Return a safe default response
+    return {
+      wantsShift: false,
+      reasoning: `Analysis failed: ${errMsg}. Defaulting to no shift acceptance.`
+    };
   }
 }

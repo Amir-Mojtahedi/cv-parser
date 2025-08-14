@@ -8,9 +8,11 @@ import {
   Bot,
   History,
   Inbox,
+  Calendar,
 } from "lucide-react";
 import { EmailList } from "@/features/gmail/components/email-list";
 import { AutomationPanel } from "@/features/gmail/components/automation-panel";
+import { ShiftManager } from "@/features/gmail/components/shift-manager";
 import {
   Button,
   Card,
@@ -21,7 +23,7 @@ import {
 } from "@/shared";
 import { EmailInfo } from "@/features/gmail/types";
 
-type ActivePane = "inbox" | "automation" | "history";
+type ActivePane = "inbox" | "automation" | "history" | "shiftManager"; // ⬅️ Added shiftManager
 
 export default function GmailPage() {
   const [messages, setMessages] = useState<EmailInfo[] | null>(null);
@@ -103,6 +105,21 @@ export default function GmailPage() {
           </Card>
         );
 
+      case "shiftManager": // ⬅️ New case
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5" />
+                <span>Shift Manager</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ShiftManager />
+            </CardContent>
+          </Card>
+        );
+
       default:
         return null;
     }
@@ -155,6 +172,16 @@ export default function GmailPage() {
               >
                 <History className="h-4 w-4 mr-3" />
                 Automation History
+              </Button>
+
+              {/* New Shift Manager button */}
+              <Button
+                onClick={() => setActivePane("shiftManager")}
+                variant={activePane === "shiftManager" ? "default" : "ghost"}
+                className="w-full justify-start h-12"
+              >
+                <Calendar className="h-4 w-4 mr-3" />
+                Shift Manager
               </Button>
             </nav>
 

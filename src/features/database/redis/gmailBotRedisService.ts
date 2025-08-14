@@ -38,7 +38,6 @@ export async function cacheGmailBotResponses(
     // Cache the combined results
     await redis.set(key, limitedResults, { ex: CACHE_EXPIRE_SECONDS });
     
-    console.log(`📧 Cached ${newResults.length} new responses. Total cached: ${limitedResults.length}`);
   } catch (error) {
     console.error("Error caching Gmail bot responses:", error);
     throw new Error(`Failed to cache Gmail bot responses: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -70,7 +69,6 @@ export async function clearGmailBotResponses(): Promise<void> {
     const userId = await getCurrentUserEmail();
     const key = getGmailBotResponsesKey(userId);
     await redis.del(key);
-    console.log("🗑️ Cleared all cached Gmail bot responses");
   } catch (error) {
     console.error("Error clearing Gmail bot responses:", error);
     throw new Error(`Failed to clear Gmail bot responses: ${error instanceof Error ? error.message : 'Unknown error'}`);

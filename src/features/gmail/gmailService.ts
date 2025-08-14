@@ -1,6 +1,9 @@
+"use server";
+
 import { google } from "googleapis";
 import { getGoogleAuthClient, fetchEmailById } from "@/features/gmail/utils";
-import { EmailInfo } from "@/features/gmail/types";
+import { EmailInfo, EmailSendResult } from "@/features/gmail/types";
+import { saveEmailTracking } from "../database/supabase/shiftSupabaseService";
 
 /**
  * Fetches the latest 10 emails from the inbox received in the last 7 days,
@@ -29,6 +32,80 @@ export async function getEmails(): Promise<EmailInfo[]> {
   } catch (err) {
     console.error("❌ Error in getEmails():", err);
     throw new Error(`getEmails failed: ${(err as Error).message}`);
+  }
+}
+
+/**
+ * Sends a single HTML email to multiple recipients.
+ *
+ * @param recipients - Array of email addresses to send to.
+ * @param subject - Subject line for the email.
+ * @param htmlBody - HTML content of the email.
+ * @returns Promise that resolves to email metadata for identification.
+ */
+export async function sendEmails(
+  recipients: string[],
+  subject: string,
+  htmlBody: string
+): Promise<EmailSendResult> {
+  try {
+    const auth = await getGoogleAuthClient();
+    const gmail = google.gmail({ version: "v1", auth });
+
+    const headers = [
+      `To: ${recipients.join(", ")}`,
+      `Subject: ${subject}`,
+      "Content-Type: text/html; charset=UTF-8",
+      "MIME-Version: 1.0",
+    ];
+
+    const rawMessage = [...headers, "", htmlBody].join("\n");
+
+    const encodedMessage = Buffer.from(rawMessage)
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+
+    const response = await gmail.users.messages.send({
+      userId: "me",
+      requestBody: {
+        raw: encodedMessage,
+      },
+    });
+
+    const messageId = response.data.id;
+    const threadId = response.data.threadId;
+    const timestamp = new Date().toISOString();
+
+    if (messageId && threadId) {
+      await saveEmailTracking(messageId, threadId, true);
+      return {
+        success: true,
+        messageId,
+        threadId,
+        recipients,
+        subject,
+        timestamp,
+      };
+    }
+    return {
+      success: false,
+      recipients,
+      subject,
+      timestamp,
+      error: "Failed to retrieve message or thread ID",
+    }
+  } catch (err) {
+    console.error("🚨 Fatal error in sendEmails():", err);
+
+    return {
+      success: false,
+      recipients,
+      subject,
+      timestamp: new Date().toISOString(),
+      error: (err as Error).message,
+    };
   }
 }
 
@@ -131,10 +208,8 @@ export async function sendEmailReply(
         "Could not retrieve original message ID for threading:",
         metadataError
       );
-      // Continue without proper Message-ID threading
     }
 
-    // Build email headers
     const headers = [
       `To: ${to}`,
       `Subject: ${replySubject}`,
@@ -160,13 +235,9 @@ export async function sendEmailReply(
       userId: "me",
       requestBody: {
         raw: encodedMessage,
-        threadId, // This ensures it stays in the same thread
+        threadId,
       },
     });
-
-    console.log(
-      `✅ Email reply sent successfully to ${to} in thread ${threadId}`
-    );
     return true;
   } catch (err) {
     console.error("❌ Error in sendEmailReply():", err);
@@ -188,7 +259,6 @@ export async function markEmailAsRead(messageId: string): Promise<void> {
         removeLabelIds: ["UNREAD"],
       },
     });
-    console.log(`✅ Marked email ${messageId} as read`);
   } catch (error) {
     console.error("Error marking email as read:", error);
   }

@@ -13,22 +13,12 @@ export function ServiceWakeup() {
       }
 
       try {
-        console.log("🚀 Waking up file parser service...");
-        const response = await fetch(`${fileParserUrl}/status`, {
+        await fetch(`${fileParserUrl}/status`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
         });
-
-        if (response.ok) {
-          console.log("✅ File parser service is awake");
-        } else {
-          console.log(
-            "⚠️ File parser service responded with status:",
-            response.status
-          );
-        }
       } catch (error) {
         console.log("❌ Failed to wake up file parser service:", error);
       }
